@@ -473,6 +473,7 @@ function readAudioSync(fallbackTime) {
     const bass = sliceAverage(0, 7);
     const mid = sliceAverage(7, 22);
     const treble = sliceAverage(22, frequencyData.length);
+    const drum = Math.min(1, bass * 0.82 + mid * 0.22 + beat * 0.32);
     return {
       isPlaying,
       time,
@@ -480,6 +481,7 @@ function readAudioSync(fallbackTime) {
       bass,
       mid,
       treble,
+      drum,
       level: Math.min(1, bass * 0.55 + mid * 0.32 + treble * 0.24 + beat * 0.32)
     };
   }
@@ -492,6 +494,7 @@ function readAudioSync(fallbackTime) {
     bass: isPlaying ? beat * 0.82 : 0,
     mid: isPlaying ? 0.24 + beat * 0.42 : 0,
     treble: isPlaying ? 0.16 + Math.abs(Math.sin(time * 9.5)) * 0.28 : 0,
+    drum: isPlaying ? beat : 0,
     level: fallbackLevel
   };
 }
@@ -543,6 +546,7 @@ function startVisualizer() {
     pulse: 1,
     kick: 0,
     bassMemory: 0,
+    drumMemory: 0,
     last: 0,
     width: 1,
     height: 1,
@@ -660,11 +664,13 @@ function startVisualizer() {
 function drawPattern(context, runtime, width, height, time, primary, secondary, tertiary) {
   const sync = runtime.audio || readAudioSync(time);
   const bassJump = Math.max(0, sync.bass - runtime.bassMemory);
+  const drumJump = Math.max(0, (sync.drum || 0) - runtime.drumMemory);
   const detectedKick = sync.isPlaying
-    ? Math.max(sync.beat * 0.86, bassJump * 4.2, sync.bass > 0.58 ? sync.bass : 0)
+    ? Math.max((sync.drum || 0) * 0.72, sync.beat * 0.52, bassJump * 3.8, drumJump * 4.6)
     : 0;
-  runtime.kick = Math.max(runtime.kick * 0.8, Math.min(1, detectedKick));
+  runtime.kick = Math.max(runtime.kick * 0.74, Math.min(1, detectedKick));
   runtime.bassMemory = runtime.bassMemory * 0.74 + sync.bass * 0.26;
+  runtime.drumMemory = runtime.drumMemory * 0.68 + (sync.drum || 0) * 0.32;
 
   const kick = runtime.kick;
   const silence = !sync.isPlaying;
@@ -707,8 +713,9 @@ function getVFZLogoBox(width, height) {
 function drawBackgroundAudioBand(context, width, height, time, sync, kick, primary) {
   if (!sync.isPlaying) return;
 
+  const drumPulse = Math.max(kick, (sync.drum || 0) * 0.36);
   const centerY = height * 0.5;
-  const bandHeight = height * (0.08 + sync.level * 0.055 + kick * 0.025);
+  const bandHeight = height * (0.08 + sync.level * 0.045 + drumPulse * 0.035);
   const points = 150;
   const bandGradient = context.createLinearGradient(0, centerY - bandHeight, 0, centerY + bandHeight);
   bandGradient.addColorStop(0, "rgba(255,8,8,0)");
@@ -727,10 +734,11 @@ function drawBackgroundAudioBand(context, width, height, time, sync, kick, prima
 
   const makeWavePoint = (progress, offset = 0) => {
     const envelope = 0.38 + Math.pow(Math.sin(progress * Math.PI), 0.9) * 0.62;
-    const low = Math.sin(progress * Math.PI * (2.2 + sync.bass * 1.8) - time * (1.6 + sync.bass * 1.4));
+    const low = Math.sin(progress * Math.PI * (2.2 + sync.bass * 1.8) - time * (1.6 + drumPulse * 1.7));
     const mid = Math.sin(progress * Math.PI * (4.6 + sync.mid * 2.2) + time * (1.15 + sync.mid * 1.5) + offset);
     const high = Math.sin(progress * Math.PI * (8.2 + sync.treble * 2.6) - time * 1.9 + offset * 0.5);
-    return (low * 0.62 + mid * 0.26 + high * 0.12) * bandHeight * envelope;
+    const drumLift = Math.sin(progress * Math.PI * 3 - time * 2.2) * drumPulse * 0.12;
+    return (low * (0.62 + drumPulse * 0.12) + mid * 0.24 + high * 0.1 + drumLift) * bandHeight * envelope;
   };
 
   context.beginPath();
