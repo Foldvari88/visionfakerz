@@ -39,8 +39,9 @@ merheto szandekot meri: a koveto, playlist-save es track-save CTA kattintasokat.
 A merheto esemenyek:
 
 - `spotify_follow_click`
-- `spotify_playlist_save_click`
-- `spotify_track_save_click`
+- `playlist_save`
+- `track_save`
+- `preview_play`
 
 GA4 bekoteshez:
 
@@ -51,3 +52,22 @@ GA4 bekoteshez:
 Az `out.html` elobb elkuldi az esemenyt GA4/dataLayer fele, majd tovabbviszi a
 latogatot a Spotify-ra. Az atiranyito csak `https://open.spotify.com/...`
 linkeket enged.
+
+Supabase bekoteshez Vercelen allitsd be:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` vagy `SUPABASE_ANON_KEY`
+
+Supabase SQL editorban futtasd:
+
+- `supabase/email_subscribers.sql`
+- `supabase/conversion_events.sql`
+
+A `conversion_events` tabla meri:
+
+- event nev
+- track cim
+- timestamp (`occurred_at`)
+- referrer
+- device (`mobile`, `tablet`, `desktop`)
+- cel Spotify URL

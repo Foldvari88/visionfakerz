@@ -77,9 +77,10 @@ const DEFAULT_TRACK_INDEX = Math.max(0, SPOTIFY.tracks.findIndex((track) => trac
 
 const EVENT_NAMES = {
   follow: "spotify_follow_click",
-  playlist_save: "spotify_playlist_save_click",
-  track_save: "spotify_track_save_click",
-  visualizer_play: "spotify_visualizer_play_click",
+  playlist_save: "playlist_save",
+  track_save: "track_save",
+  preview_play: "preview_play",
+  visualizer_play: "preview_play",
   email_signup: "email_signup_submit"
 };
 
@@ -207,14 +208,51 @@ function safeSpotifyTarget(target) {
   }
 }
 
-function sendConversionEvent(action, label, target) {
+function getDeviceType() {
+  const width = window.innerWidth || 0;
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+  if (width < 760 || coarsePointer) return "mobile";
+  if (width < 1100) return "tablet";
+  return "desktop";
+}
+
+function inferTrackTitle(label = "") {
+  const normalized = String(label).replace(/\+/g, " ");
+  const match = SPOTIFY.tracks.find((track) => normalized.toLowerCase().includes(track.title.toLowerCase()));
+  return match?.title || "";
+}
+
+function sendServerConversionEvent(payload) {
+  const body = JSON.stringify(payload);
+  try {
+    if (navigator.sendBeacon) {
+      const sent = navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
+      if (sent) return;
+    }
+  } catch {
+    // Fall through to fetch keepalive.
+  }
+
+  fetch("/api/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true
+  }).catch(() => {});
+}
+
+function sendConversionEvent(action, label, target, metadata = {}) {
   const eventName = EVENT_NAMES[action] || "spotify_click";
+  const trackTitle = metadata.track_title || inferTrackTitle(label);
   const payload = {
     event: eventName,
     spotify_action: action,
     spotify_label: label,
     spotify_target: target,
+    track_title: trackTitle,
     page_path: window.location.pathname,
+    referrer: document.referrer || "",
+    device: getDeviceType(),
     timestamp: new Date().toISOString()
   };
 
@@ -229,6 +267,8 @@ function sendConversionEvent(action, label, target) {
       transport_type: "beacon"
     });
   }
+
+  sendServerConversionEvent(payload);
 
   try {
     const stored = JSON.parse(window.localStorage.getItem("vfz_spotify_clicks") || "[]");
@@ -404,7 +444,9 @@ function playTrackPreview(track, index) {
   playingPreviewIndex = index;
   syncTrackStates();
   if (visualizerRuntime) visualizerRuntime.pulse = 1.9;
-  sendConversionEvent("visualizer_play", `preview_${index + 1}_${track.title}`, track.url);
+  sendConversionEvent("preview_play", `preview_${index + 1}_${track.title}`, track.url, {
+    track_title: track.title
+  });
 
   audio.play().catch(() => {
     playingPreviewIndex = null;

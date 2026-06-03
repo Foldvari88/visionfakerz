@@ -1,6 +1,13 @@
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ALLOWED_EVENTS = new Set([
+  "spotify_follow_click",
+  "playlist_save",
+  "track_save",
+  "preview_play",
+  "email_signup_submit",
+  "spotify_click"
+]);
 
-module.exports = async function subscribe(request, response) {
+module.exports = async function events(request, response) {
   if (request.method === "OPTIONS") {
     response.setHeader("Allow", "POST, OPTIONS");
     return response.status(204).end();
@@ -23,27 +30,32 @@ module.exports = async function subscribe(request, response) {
   } catch {
     return response.status(400).json({ error: "Invalid JSON" });
   }
-  const email = String(body.email || "").trim().toLowerCase();
-  if (!EMAIL_RE.test(email)) {
-    return response.status(400).json({ error: "Invalid email" });
+  const eventName = String(body.event || "spotify_click").slice(0, 80);
+  if (!ALLOWED_EVENTS.has(eventName)) {
+    return response.status(400).json({ error: "Invalid event" });
   }
 
   const payload = {
-    email,
-    source: String(body.source || "visionfakerz_landing").slice(0, 120),
+    event_name: eventName,
+    spotify_action: String(body.spotify_action || "").slice(0, 80),
+    spotify_label: String(body.spotify_label || "").slice(0, 180),
+    spotify_target: String(body.spotify_target || "").slice(0, 700),
+    track_title: String(body.track_title || "").slice(0, 180),
     page_path: String(body.page_path || "").slice(0, 240),
-    referrer: String(body.referrer || "").slice(0, 500),
-    user_agent: String(request.headers["user-agent"] || "").slice(0, 500)
+    referrer: String(body.referrer || request.headers.referer || "").slice(0, 700),
+    device: String(body.device || "").slice(0, 40),
+    user_agent: String(request.headers["user-agent"] || "").slice(0, 500),
+    occurred_at: body.timestamp || new Date().toISOString()
   };
 
-  const insertUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/email_subscribers?on_conflict=email`;
+  const insertUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/conversion_events`;
   const supabaseResponse = await fetch(insertUrl, {
     method: "POST",
     headers: {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
       "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=minimal"
+      Prefer: "return=minimal"
     },
     body: JSON.stringify(payload)
   });
