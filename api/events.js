@@ -48,7 +48,7 @@ module.exports = async function events(request, response) {
     occurred_at: body.timestamp || new Date().toISOString()
   };
 
-  const insertUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/conversion_events`;
+  const insertUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/conversions`;
   const supabaseResponse = await fetch(insertUrl, {
     method: "POST",
     headers: {

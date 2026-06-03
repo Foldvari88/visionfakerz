@@ -61,13 +61,15 @@ Supabase bekoteshez Vercelen allitsd be:
 Supabase SQL editorban futtasd:
 
 - `supabase/email_subscribers.sql`
-- `supabase/conversion_events.sql`
+- `supabase/conversions.sql`
 
-A `conversion_events` tabla meri:
+A `conversions` tabla meri:
 
 - event nev
+- Spotify action/label/target
 - track cim
 - timestamp (`occurred_at`)
 - referrer
 - device (`mobile`, `tablet`, `desktop`)
-- cel Spotify URL
+- oldal path
+- user agent
