@@ -19,3 +19,8 @@ assets/music/snippets/*
 # Temporary folders
 **/_tmp/
 **/_smoke/
+
+# Local secrets
+.env
+.env.*
+!.env.example

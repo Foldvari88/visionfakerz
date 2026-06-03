@@ -55,8 +55,20 @@ linkeket enged.
 
 Supabase bekoteshez Vercelen allitsd be:
 
-- `SUPABASE_URL`
+- `SUPABASE_URL=https://hgwendvgyhlyyuslehhg.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` vagy `SUPABASE_ANON_KEY`
+
+Vercel CLI-vel:
+
+```powershell
+npx vercel@latest env add SUPABASE_URL production
+npx vercel@latest env add SUPABASE_SERVICE_ROLE_KEY production
+npx vercel@latest env add SUPABASE_URL preview
+npx vercel@latest env add SUPABASE_SERVICE_ROLE_KEY preview
+```
+
+Helyi teszthez masold a `.env.example` fajlt `.env.local` neven, es toltsd ki
+a kulcsot. A service role key-t ne commitold.
 
 Supabase SQL editorban futtasd:
 
