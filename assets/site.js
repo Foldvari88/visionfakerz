@@ -685,6 +685,7 @@ function drawPattern(context, runtime, width, height, time, primary, secondary, 
   context.fillStyle = bg;
   context.fillRect(0, 0, width, height);
 
+  drawBackgroundAudioBand(context, width, height, time, sync, kick, primary);
   drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "back");
   drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "front");
   drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary);
@@ -722,6 +723,56 @@ function getVFZLogoBox(width, height) {
     x: (width - VFZ_LOGO_VIEWBOX.width * scale) * 0.5,
     y: height * 0.06 + (height * 0.72 - VFZ_LOGO_VIEWBOX.height * scale) * 0.5
   };
+}
+
+function drawBackgroundAudioBand(context, width, height, time, sync, kick, primary) {
+  if (!sync.isPlaying) return;
+
+  const centerY = height * 0.49;
+  const bandHeight = height * (0.13 + sync.level * 0.1 + kick * 0.08);
+  const barCount = Math.min(54, Math.max(28, Math.floor(width / 10)));
+  const bandGradient = context.createLinearGradient(0, centerY - bandHeight, 0, centerY + bandHeight);
+  bandGradient.addColorStop(0, "rgba(255,8,8,0)");
+  bandGradient.addColorStop(0.36, `rgba(255,8,8,${0.08 + sync.level * 0.08})`);
+  bandGradient.addColorStop(0.5, `rgba(255,255,255,${0.025 + kick * 0.035})`);
+  bandGradient.addColorStop(0.64, `rgba(255,8,8,${0.08 + sync.level * 0.08})`);
+  bandGradient.addColorStop(1, "rgba(255,8,8,0)");
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  context.fillStyle = bandGradient;
+  context.fillRect(0, centerY - bandHeight, width, bandHeight * 2);
+
+  context.strokeStyle = `rgba(255,8,8,${0.16 + sync.level * 0.16})`;
+  context.lineWidth = 1;
+  context.shadowColor = primary || "rgba(255,8,8,0.62)";
+  context.shadowBlur = 10 + kick * 18;
+  for (let row = -2; row <= 2; row += 1) {
+    const offset = row * bandHeight * 0.2;
+    context.beginPath();
+    for (let point = 0; point <= 110; point += 1) {
+      const progress = point / 110;
+      const envelope = Math.pow(Math.sin(progress * Math.PI), 0.72);
+      const bassWave = Math.sin(progress * Math.PI * (2.3 + sync.bass * 4) - time * (2.8 + sync.bass * 3.6));
+      const trebleWave = Math.sin(progress * Math.PI * (10 + sync.treble * 7) + time * (5.2 + sync.treble * 4));
+      const y = centerY + offset + (bassWave * bandHeight * 0.18 + trebleWave * bandHeight * 0.045) * envelope;
+      const x = progress * width;
+      if (point === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+
+  context.fillStyle = `rgba(255,8,8,${0.035 + sync.level * 0.055})`;
+  for (let bar = 0; bar < barCount; bar += 1) {
+    const progress = bar / Math.max(1, barCount - 1);
+    const kickShape = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 6 - time * 5.6)), 12);
+    const levelShape = 0.28 + sync.mid * 0.55 + sync.treble * 0.24 + kickShape * (0.45 + kick * 1.2);
+    const barHeight = bandHeight * Math.min(1.4, levelShape);
+    const x = progress * width;
+    context.fillRect(x, centerY - barHeight * 0.5, Math.max(1, width * 0.006), barHeight);
+  }
+  context.restore();
 }
 
 function drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, layer) {
