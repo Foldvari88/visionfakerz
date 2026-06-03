@@ -695,7 +695,9 @@ function drawPattern(context, runtime, width, height, time, primary, secondary, 
   context.fillStyle = bg;
   context.fillRect(0, 0, width, height);
 
+  drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "back");
   drawVFZLogo(context, runtime, width, height, time, energy, kick, primary);
+  drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "front");
   drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary);
 
   if (!silence && kick > 0.16) {
@@ -785,6 +787,133 @@ function drawVFZLogoFallback(context, box, primary) {
   context.moveTo(box.x + 282 * box.scale, box.y + 236 * box.scale);
   context.lineTo(box.x + 386 * box.scale, box.y + 166 * box.scale);
   context.stroke();
+}
+
+function drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, layer) {
+  const box = getVFZLogoBox(width, height);
+  const logoWidth = VFZ_LOGO_VIEWBOX.width * box.scale;
+  const logoHeight = VFZ_LOGO_VIEWBOX.height * box.scale;
+  const centerY = box.y + logoHeight * 0.56;
+  const startX = box.x - logoWidth * 0.1;
+  const endX = box.x + logoWidth * 1.08;
+  const turns = 2.15;
+  const travel = silence ? 0.42 : 1.6 + kick * 1.35;
+  const coilAmplitude = logoHeight * (silence ? 0.12 : 0.14 + energy * 0.08 + kick * 0.1);
+  const points = 220;
+  const ribbonPoints = [];
+
+  for (let point = 0; point <= points; point += 1) {
+    const progress = point / points;
+    const phase = progress * Math.PI * 2 * turns - time * travel;
+    const depth = Math.cos(phase);
+    const lift = Math.sin(phase);
+    const breath = Math.sin(progress * Math.PI * 3.2 + time * 1.3) * logoHeight * 0.018 * (0.3 + energy);
+    const kickSpike = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 9 - time * 5.4)), 16) * kick * logoHeight * 0.12;
+    ribbonPoints.push({
+      x: startX + (endX - startX) * progress + depth * logoWidth * 0.035,
+      y: centerY + lift * coilAmplitude + breath - kickSpike,
+      depth,
+      progress
+    });
+  }
+
+  const isFrontLayer = layer === "front";
+  const visibleTest = isFrontLayer
+    ? (point) => point.depth > -0.18
+    : (point) => point.depth <= 0.28;
+  const baseAlpha = isFrontLayer
+    ? (silence ? 0.58 : 0.72 + kick * 0.22)
+    : (silence ? 0.18 : 0.24 + kick * 0.12);
+  const baseWidth = isFrontLayer
+    ? 3.1 + energy * 2.2 + kick * 5.4
+    : 5 + kick * 4;
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  drawRibbonStroke(context, ribbonPoints, visibleTest, {
+    color: `rgba(255,8,8,${baseAlpha * 0.32})`,
+    width: baseWidth * 4.4,
+    blur: 24 + kick * 42,
+    alpha: 1,
+    dash: null
+  });
+  drawRibbonStroke(context, ribbonPoints, visibleTest, {
+    color: primary || "rgba(255,8,8,0.92)",
+    width: baseWidth,
+    blur: 14 + kick * 28,
+    alpha: baseAlpha,
+    dash: [58 - Math.min(28, kick * 22), 34 + kick * 16],
+    dashOffset: -time * (silence ? 18 : 72 + kick * 90)
+  });
+  drawRibbonStroke(context, ribbonPoints, visibleTest, {
+    color: `rgba(255,255,255,${isFrontLayer ? 0.76 : 0.18})`,
+    width: Math.max(1, baseWidth * 0.3),
+    blur: 10 + kick * 22,
+    alpha: isFrontLayer ? 0.72 : 0.24,
+    dash: [16 + kick * 18, 70],
+    dashOffset: -time * (silence ? 30 : 130 + kick * 130)
+  });
+
+  if (isFrontLayer) {
+    drawRibbonPulseNodes(context, ribbonPoints, time, kick, silence);
+  }
+  context.restore();
+}
+
+function drawRibbonStroke(context, points, visibleTest, options) {
+  context.save();
+  context.globalAlpha = options.alpha;
+  context.strokeStyle = options.color;
+  context.lineWidth = options.width;
+  context.shadowColor = options.color;
+  context.shadowBlur = options.blur;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  if (options.dash) {
+    context.setLineDash(options.dash);
+    context.lineDashOffset = options.dashOffset || 0;
+  } else {
+    context.setLineDash([]);
+  }
+
+  let drawing = false;
+  context.beginPath();
+  points.forEach((point) => {
+    if (!visibleTest(point)) {
+      if (drawing) {
+        context.stroke();
+        context.beginPath();
+        drawing = false;
+      }
+      return;
+    }
+    if (!drawing) {
+      context.moveTo(point.x, point.y);
+      drawing = true;
+      return;
+    }
+    context.lineTo(point.x, point.y);
+  });
+  if (drawing) context.stroke();
+  context.restore();
+}
+
+function drawRibbonPulseNodes(context, points, time, kick, silence) {
+  const nodeCount = silence ? 1 : 3;
+  for (let node = 0; node < nodeCount; node += 1) {
+    const target = ((time * (silence ? 0.08 : 0.34 + kick * 0.24)) + node / nodeCount) % 1;
+    const point = points[Math.min(points.length - 1, Math.max(0, Math.round(target * (points.length - 1))))];
+    if (!point || point.depth < -0.18) continue;
+    const radius = silence ? 3.4 : 4.8 + kick * 12;
+    const glow = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius * 6);
+    glow.addColorStop(0, `rgba(255,255,255,${0.62 + kick * 0.28})`);
+    glow.addColorStop(0.2, `rgba(255,8,8,${0.58 + kick * 0.32})`);
+    glow.addColorStop(1, "rgba(255,8,8,0)");
+    context.fillStyle = glow;
+    context.beginPath();
+    context.arc(point.x, point.y, radius * 6, 0, Math.PI * 2);
+    context.fill();
+  }
 }
 
 function drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary) {
