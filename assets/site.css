@@ -681,22 +681,20 @@ main {
 }
 
 .spotify-frame--hero .spotify-fallback {
-  min-height: 6.25rem;
+  min-height: clamp(16rem, 62svw, 19.5rem);
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
 }
 
 .spotify-frame--hero .playlist-queue {
-  display: none;
-}
-
-@media (min-width: 540px) {
-  .spotify-frame--hero .playlist-queue {
-    display: grid;
-    max-height: 10rem;
-    overflow: auto;
-    padding-right: 0.1rem;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 8, 8, 0.8) rgba(0, 0, 0, 0.4);
-  }
+  display: grid;
+  max-height: clamp(9rem, 36svh, 12.25rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 0.1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 8, 8, 0.8) rgba(0, 0, 0, 0.4);
 }
 
 .spotify-frame--hero .spotify-fallback__tagline,
