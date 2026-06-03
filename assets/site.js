@@ -470,6 +470,8 @@ function startVisualizer() {
     particles: [],
     audio: readAudioSync(0),
     pulse: 1,
+    kick: 0,
+    bassMemory: 0,
     last: 0,
     width: 1,
     height: 1,
@@ -584,51 +586,109 @@ function startVisualizer() {
   requestAnimationFrame(draw);
 }
 
-function drawPattern(context, runtime, width, height, time, primary, secondary, tertiary) {
+function drawPattern(context, runtime, width, height, time, primary, secondary) {
   const sync = runtime.audio || readAudioSync(time);
-  const audioHit = sync.isPlaying
-    ? sync.level * 1.35 + sync.bass * 0.82 + sync.treble * 0.22 + sync.beat * 0.58
+  const bassJump = Math.max(0, sync.bass - runtime.bassMemory);
+  const detectedKick = sync.isPlaying
+    ? Math.max(sync.beat * 0.86, bassJump * 4.2, sync.bass > 0.58 ? sync.bass : 0)
     : 0;
-  const microFrequency = sync.isPlaying ? Math.pow(Math.max(0, Math.sin(time * 12.5)), 16) * sync.treble * 0.46 : 0;
-  const energy = Math.min(1.75, Math.max(sync.isPlaying ? 0.28 : 0.18, runtime.pulse, audioHit + microFrequency));
+  runtime.kick = Math.max(runtime.kick * 0.8, Math.min(1, detectedKick));
+  runtime.bassMemory = runtime.bassMemory * 0.74 + sync.bass * 0.26;
+
+  const kick = runtime.kick;
   const silence = !sync.isPlaying;
-  const lens = [
-    [width * 0.07, height * 0.23],
-    [width * 0.72 + energy * 16, height * 0.08],
-    [width * 0.95, height * 0.34],
-    [width * 0.82, height * 0.92],
-    [width * 0.18 - energy * 12, height * 0.84]
-  ];
-  const centerX = width * 0.52;
-  const centerY = height * 0.52;
+  const idleSwing = 0.035 + Math.sin(time * 1.4) * 0.01;
+  const swing = silence
+    ? idleSwing
+    : 0.075 + sync.mid * 0.08 + sync.treble * 0.04 + kick * 0.54;
+  const glow = silence ? 0.18 : 0.28 + kick * 0.62;
+  const baseline = height * (0.5 + Math.sin(time * 0.7) * 0.014);
 
   context.lineCap = "round";
   context.lineJoin = "round";
-  context.fillStyle = "#030000";
+  context.fillStyle = "#020000";
   context.fillRect(0, 0, width, height);
 
-  drawDimensionalVoid(context, width, height, time, energy, primary);
-  drawLensShadow(context, lens, energy);
+  const bg = context.createRadialGradient(width * 0.5, baseline, 0, width * 0.5, baseline, width * 0.72);
+  bg.addColorStop(0, `rgba(255,8,8,${0.16 + glow * 0.16})`);
+  bg.addColorStop(0.28, `rgba(120,0,0,${0.16 + glow * 0.14})`);
+  bg.addColorStop(1, "rgba(0,0,0,0)");
+  context.fillStyle = bg;
+  context.fillRect(0, 0, width, height);
 
   context.save();
-  tracePolygon(context, lens);
-  context.clip();
-  drawLensInterior(context, width, height, time, energy, primary, secondary);
-  drawTrackSignature(context, runtime.track, width, height, time, energy, primary, secondary, tertiary, sync);
-  drawFrequencyLine(context, width, height, time, energy, silence, tertiary);
-  if (!silence) {
-    drawDimensionalFlash(context, width, height, energy, primary, secondary);
+  context.globalCompositeOperation = "screen";
+  for (let line = 0; line < 6; line += 1) {
+    const y = height * (0.18 + line * 0.13);
+    context.strokeStyle = `rgba(255,8,8,${0.045 + kick * 0.045})`;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y + Math.sin(time * 2 + line) * kick * 5);
+    context.stroke();
   }
   context.restore();
 
-  drawLensGlass(context, lens, width, height, energy);
-  drawLensCracks(context, width, height, energy, primary);
-  drawFloatingShards(context, runtime, width, height, time, energy, primary, tertiary);
-  drawFrequencyLine(context, width, height, time, Math.max(energy * 0.72, 0.18), silence, "rgba(255,255,255,0.92)");
+  drawKickWave(context, width, height, time, baseline, swing, kick, silence, primary, 0, 1);
+  drawKickWave(context, width, height, time + 0.17, baseline, swing * 0.66, kick, silence, "rgba(255,32,32,0.72)", -height * 0.035, 0.72);
+  drawKickWave(context, width, height, time - 0.11, baseline, swing * 0.42, kick, silence, "rgba(255,86,86,0.72)", height * 0.034, 0.5);
+
+  if (!silence && kick > 0.18) {
+    const hit = context.createRadialGradient(width * 0.5, baseline, 0, width * 0.5, baseline, width * (0.22 + kick * 0.22));
+    hit.addColorStop(0, `rgba(255,80,80,${0.12 + kick * 0.24})`);
+    hit.addColorStop(0.22, `rgba(255,8,8,${0.18 + kick * 0.32})`);
+    hit.addColorStop(1, "rgba(255,8,8,0)");
+    context.fillStyle = hit;
+    context.fillRect(0, 0, width, height);
+  }
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  context.fillStyle = `rgba(255,8,8,${0.08 + kick * 0.22})`;
+  for (let bar = 0; bar < 26; bar += 1) {
+    const progress = bar / 25;
+    const beatShape = Math.pow(Math.sin(progress * Math.PI), 1.8);
+    const barHeight = height * (0.012 + beatShape * (0.04 + kick * 0.18 + sync.bass * 0.08));
+    context.fillRect(progress * width, baseline - barHeight * 0.5, width * 0.018, barHeight);
+  }
+  context.restore();
 
   context.globalAlpha = 1;
   context.shadowBlur = 0;
   context.setLineDash([]);
+}
+
+function drawKickWave(context, width, height, time, baseline, swing, kick, silence, color, offsetY, alpha) {
+  const amplitude = height * swing;
+  const frequency = silence ? 1.15 : 2.25 + kick * 1.55;
+  const phase = time * (silence ? 1.25 : 5.2 + kick * 4.4);
+  const points = 180;
+
+  context.save();
+  context.globalAlpha = alpha;
+  context.strokeStyle = color;
+  context.lineWidth = silence ? 2 : 2.4 + kick * 5.8;
+  context.shadowColor = color;
+  context.shadowBlur = silence ? 10 : 16 + kick * 30;
+  context.beginPath();
+
+  for (let point = 0; point <= points; point += 1) {
+    const progress = point / points;
+    const envelope = Math.pow(Math.sin(progress * Math.PI), 0.55);
+    const kickSpikeA = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 6 - phase * 0.92)), 18);
+    const kickSpikeB = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 10 + phase * 0.58)), 24);
+    const breath = Math.sin(progress * Math.PI * frequency + phase) * amplitude * envelope;
+    const sub = Math.sin(progress * Math.PI * (frequency * 0.48) - phase * 0.42) * amplitude * 0.32 * envelope;
+    const kickLift = (kickSpikeA - kickSpikeB * 0.68) * amplitude * (1.2 + kick * 2.8) * kick;
+    const micro = silence ? 0 : Math.sin(progress * 120 + time * 18) * height * 0.006 * kick;
+    const x = progress * width;
+    const y = baseline + offsetY + breath + sub - kickLift + micro;
+    if (point === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+
+  context.stroke();
+  context.restore();
 }
 
 function tracePolygon(context, points) {
