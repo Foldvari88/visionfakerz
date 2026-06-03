@@ -3,9 +3,35 @@
 Ez a landing oldal a `index.html`, `out.html`, `assets/site.css`,
 `assets/site.js` es `assets/visionfakerz-mark.svg` fajlokbol all.
 
-## Spotify linkek csereje
+## Spotify katalogus
 
-A pontos Spotify URL-eket az `assets/site.js` elejen kell cserelni:
+Az oldal indulaskor megprobalja a `/api/spotify-tracks` endpointon keresztul
+Spotify-bol betolteni a VisionFakerZ katalogust. Igy ha uj track kerul fel
+Spotify-ra, a track-by-track lista automatikusan frissul a kovetkezo
+Vercel futas/cache frissites utan. Ha a Spotify API env vars nincsenek
+beallitva, a kezzel megadott fallback lista marad lathato.
+
+Vercelen ezek kellenek:
+
+- `SPOTIFY_CLIENT_ID`
+- `SPOTIFY_CLIENT_SECRET`
+- `SPOTIFY_ARTIST_ID`
+- `SPOTIFY_MARKET=HU`
+
+Vercel CLI-vel:
+
+```powershell
+npx vercel@latest env add SPOTIFY_CLIENT_ID production
+npx vercel@latest env add SPOTIFY_CLIENT_SECRET production
+npx vercel@latest env add SPOTIFY_ARTIST_ID production
+npx vercel@latest env add SPOTIFY_MARKET production
+npx vercel@latest env add SPOTIFY_CLIENT_ID preview
+npx vercel@latest env add SPOTIFY_CLIENT_SECRET preview
+npx vercel@latest env add SPOTIFY_ARTIST_ID preview
+npx vercel@latest env add SPOTIFY_MARKET preview
+```
+
+A pontos fallback Spotify URL-eket az `assets/site.js` elejen lehet cserelni:
 
 - `artistUrl`: VisionFakerZ Spotify artist oldal
 - `playlistUrl`: This Is VisionFakerZ playlist oldal

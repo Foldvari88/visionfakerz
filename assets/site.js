@@ -70,10 +70,20 @@ const SPOTIFY = {
   ]
 };
 
+const FALLBACK_TRACKS = SPOTIFY.tracks.map((track) => ({ ...track }));
+const AUTO_TRACK_PATTERNS = ["teeth", "cards", "grid", "tunnel", "echo", "rain"];
+const AUTO_TRACK_PALETTES = [
+  ["#ff0808", "#f5007a", "#ffffff"],
+  ["#ff0808", "#ffd24a", "#ffffff"],
+  ["#ff0808", "#9b9b9b", "#ffffff"],
+  ["#ff0808", "#1ed760", "#ffffff"],
+  ["#ff0808", "#2bdcff", "#ffffff"],
+  ["#ff0808", "#ffffff", "#4b0000"]
+];
+
 const GA_MEASUREMENT_ID = "";
 
 const DEFAULT_TRACK_TITLE = "Whoremonger";
-const DEFAULT_TRACK_INDEX = Math.max(0, SPOTIFY.tracks.findIndex((track) => track.title === DEFAULT_TRACK_TITLE));
 
 const EVENT_NAMES = {
   follow: "spotify_follow_click",
@@ -84,7 +94,11 @@ const EVENT_NAMES = {
   email_signup: "email_signup_submit"
 };
 
-let activeTrackIndex = DEFAULT_TRACK_INDEX;
+function getDefaultTrackIndex() {
+  return Math.max(0, SPOTIFY.tracks.findIndex((track) => track.title === DEFAULT_TRACK_TITLE));
+}
+
+let activeTrackIndex = getDefaultTrackIndex();
 let visualizerRuntime;
 let previewAudio;
 let playingPreviewIndex = null;
@@ -129,6 +143,52 @@ function isPlayableSpotifyEmbed(url) {
       /^\/embed\/(track|playlist|album|artist)\//.test(parsed.pathname);
   } catch {
     return false;
+  }
+}
+
+function normalizeTrackKey(title = "") {
+  return String(title).trim().toLowerCase();
+}
+
+function hashString(value = "") {
+  return [...String(value)].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0);
+}
+
+function decorateSpotifyCatalogTrack(track, index) {
+  const title = String(track.title || "").trim();
+  const fallback = FALLBACK_TRACKS.find((item) => normalizeTrackKey(item.title) === normalizeTrackKey(title));
+  const seed = Math.abs(hashString(title || String(index)));
+  const releaseDate = String(track.releaseDate || fallback?.releaseDate || "");
+  const year = String(track.year || releaseDate.slice(0, 4) || fallback?.year || "");
+  const url = track.url || fallback?.url || spotifySearchUrl(`track:${title} artist:VisionFakerz`);
+
+  return {
+    title,
+    year,
+    mood: fallback?.mood || "new signal bending into the fake dimension",
+    palette: fallback?.palette || AUTO_TRACK_PALETTES[seed % AUTO_TRACK_PALETTES.length],
+    pattern: fallback?.pattern || AUTO_TRACK_PATTERNS[seed % AUTO_TRACK_PATTERNS.length],
+    url,
+    previewUrl: track.previewUrl || fallback?.previewUrl || "",
+    embedUrl: track.embedUrl || spotifyEmbedUrl(url),
+    releaseDate,
+    album: track.album || "",
+    albumImage: track.albumImage || ""
+  };
+}
+
+async function loadSpotifyCatalog() {
+  try {
+    const response = await fetch("/api/spotify-tracks", { cache: "no-store" });
+    if (!response.ok) return;
+    const body = await response.json();
+    if (!Array.isArray(body.tracks) || body.tracks.length === 0) return;
+    SPOTIFY.tracks = body.tracks
+      .map(decorateSpotifyCatalogTrack)
+      .filter((track) => track.title && track.url);
+    activeTrackIndex = getDefaultTrackIndex();
+  } catch {
+    // Keep the curated fallback list when Spotify API credentials are not configured.
   }
 }
 
@@ -1280,10 +1340,12 @@ function initIndexPage() {
   }
 
   if (trackList) {
+    trackList.replaceChildren();
     SPOTIFY.tracks.forEach((track, index) => {
       trackList.append(buildTrackCard(track, index));
     });
-    setVisualizerTrack(SPOTIFY.tracks[DEFAULT_TRACK_INDEX], DEFAULT_TRACK_INDEX);
+    const defaultIndex = getDefaultTrackIndex();
+    setVisualizerTrack(SPOTIFY.tracks[defaultIndex], defaultIndex);
   }
 
   document.querySelectorAll(".tracked-link").forEach((link) => {
@@ -1314,15 +1376,21 @@ function initRedirectPage() {
   }, 650);
 }
 
-setupAnalytics();
-initButtonEffects();
-initBrokenGlassesCursor();
-initSiteMenu();
-initSignupForm();
+async function bootSite() {
+  setupAnalytics();
+  initButtonEffects();
+  initBrokenGlassesCursor();
+  initSiteMenu();
+  initSignupForm();
 
-if (document.body.classList.contains("redirect-page")) {
-  initRedirectPage();
-} else {
+  if (document.body.classList.contains("redirect-page")) {
+    initRedirectPage();
+    return;
+  }
+
+  await loadSpotifyCatalog();
   startVisualizer();
   initIndexPage();
 }
+
+bootSite();
