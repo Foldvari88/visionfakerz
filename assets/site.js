@@ -670,8 +670,8 @@ function drawPattern(context, runtime, width, height, time, primary, secondary, 
   const silence = !sync.isPlaying;
   const energy = silence
     ? 0.055 + Math.sin(time * 1.25) * 0.018
-    : Math.min(1, 0.16 + sync.bass * 0.28 + sync.mid * 0.14 + sync.treble * 0.1 + kick * 0.74 + runtime.pulse * 0.12);
-  const glow = silence ? 0.16 : 0.28 + kick * 0.72;
+    : Math.min(0.42, 0.12 + sync.level * 0.16 + kick * 0.16 + runtime.pulse * 0.04);
+  const glow = silence ? 0.16 : 0.2 + sync.level * 0.12 + kick * 0.12;
 
   context.lineCap = "round";
   context.lineJoin = "round";
@@ -690,27 +690,6 @@ function drawPattern(context, runtime, width, height, time, primary, secondary, 
   drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "front");
   drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary);
 
-  if (!silence && kick > 0.16) {
-    const hit = context.createRadialGradient(width * 0.5, height * 0.42, 0, width * 0.5, height * 0.42, width * (0.2 + kick * 0.24));
-    hit.addColorStop(0, `rgba(255,255,255,${0.08 + kick * 0.16})`);
-    hit.addColorStop(0.22, `rgba(255,8,8,${0.12 + kick * 0.34})`);
-    hit.addColorStop(1, "rgba(255,8,8,0)");
-    context.fillStyle = hit;
-    context.fillRect(0, 0, width, height);
-  }
-
-  context.save();
-  context.globalCompositeOperation = "screen";
-  context.fillStyle = `rgba(255,8,8,${0.035 + kick * 0.13})`;
-  const barCount = runtime.isMobile ? 18 : 32;
-  for (let bar = 0; bar < barCount; bar += 1) {
-    const progress = bar / Math.max(1, barCount - 1);
-    const beatShape = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 5 - time * 5.4)), 18);
-    const barHeight = height * (0.025 + beatShape * (0.12 + kick * 0.46));
-    context.fillRect(progress * width, height * 0.55 - barHeight * 0.5, width * 0.01, barHeight);
-  }
-  context.restore();
-
   context.globalAlpha = 1;
   context.shadowBlur = 0;
   context.setLineDash([]);
@@ -728,50 +707,73 @@ function getVFZLogoBox(width, height) {
 function drawBackgroundAudioBand(context, width, height, time, sync, kick, primary) {
   if (!sync.isPlaying) return;
 
-  const centerY = height * 0.49;
-  const bandHeight = height * (0.13 + sync.level * 0.1 + kick * 0.08);
-  const barCount = Math.min(54, Math.max(28, Math.floor(width / 10)));
+  const centerY = height * 0.5;
+  const bandHeight = height * (0.08 + sync.level * 0.055 + kick * 0.025);
+  const points = 150;
   const bandGradient = context.createLinearGradient(0, centerY - bandHeight, 0, centerY + bandHeight);
   bandGradient.addColorStop(0, "rgba(255,8,8,0)");
-  bandGradient.addColorStop(0.36, `rgba(255,8,8,${0.08 + sync.level * 0.08})`);
-  bandGradient.addColorStop(0.5, `rgba(255,255,255,${0.025 + kick * 0.035})`);
-  bandGradient.addColorStop(0.64, `rgba(255,8,8,${0.08 + sync.level * 0.08})`);
+  bandGradient.addColorStop(0.36, `rgba(255,8,8,${0.035 + sync.level * 0.035})`);
+  bandGradient.addColorStop(0.5, `rgba(255,255,255,${0.012 + sync.level * 0.018})`);
+  bandGradient.addColorStop(0.64, `rgba(255,8,8,${0.035 + sync.level * 0.035})`);
   bandGradient.addColorStop(1, "rgba(255,8,8,0)");
 
   context.save();
   context.globalCompositeOperation = "screen";
   context.fillStyle = bandGradient;
-  context.fillRect(0, centerY - bandHeight, width, bandHeight * 2);
+  context.fillRect(0, centerY - bandHeight * 1.1, width, bandHeight * 2.2);
 
-  context.strokeStyle = `rgba(255,8,8,${0.16 + sync.level * 0.16})`;
-  context.lineWidth = 1;
   context.shadowColor = primary || "rgba(255,8,8,0.62)";
-  context.shadowBlur = 10 + kick * 18;
-  for (let row = -2; row <= 2; row += 1) {
-    const offset = row * bandHeight * 0.2;
-    context.beginPath();
-    for (let point = 0; point <= 110; point += 1) {
-      const progress = point / 110;
-      const envelope = Math.pow(Math.sin(progress * Math.PI), 0.72);
-      const bassWave = Math.sin(progress * Math.PI * (2.3 + sync.bass * 4) - time * (2.8 + sync.bass * 3.6));
-      const trebleWave = Math.sin(progress * Math.PI * (10 + sync.treble * 7) + time * (5.2 + sync.treble * 4));
-      const y = centerY + offset + (bassWave * bandHeight * 0.18 + trebleWave * bandHeight * 0.045) * envelope;
-      const x = progress * width;
-      if (point === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
-    }
-    context.stroke();
-  }
+  context.shadowBlur = 8 + sync.level * 10;
 
-  context.fillStyle = `rgba(255,8,8,${0.035 + sync.level * 0.055})`;
-  for (let bar = 0; bar < barCount; bar += 1) {
-    const progress = bar / Math.max(1, barCount - 1);
-    const kickShape = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 6 - time * 5.6)), 12);
-    const levelShape = 0.28 + sync.mid * 0.55 + sync.treble * 0.24 + kickShape * (0.45 + kick * 1.2);
-    const barHeight = bandHeight * Math.min(1.4, levelShape);
+  const makeWavePoint = (progress, offset = 0) => {
+    const envelope = 0.38 + Math.pow(Math.sin(progress * Math.PI), 0.9) * 0.62;
+    const low = Math.sin(progress * Math.PI * (2.2 + sync.bass * 1.8) - time * (1.6 + sync.bass * 1.4));
+    const mid = Math.sin(progress * Math.PI * (4.6 + sync.mid * 2.2) + time * (1.15 + sync.mid * 1.5) + offset);
+    const high = Math.sin(progress * Math.PI * (8.2 + sync.treble * 2.6) - time * 1.9 + offset * 0.5);
+    return (low * 0.62 + mid * 0.26 + high * 0.12) * bandHeight * envelope;
+  };
+
+  context.beginPath();
+  for (let point = 0; point <= points; point += 1) {
+    const progress = point / points;
     const x = progress * width;
-    context.fillRect(x, centerY - barHeight * 0.5, Math.max(1, width * 0.006), barHeight);
+    const y = centerY + makeWavePoint(progress);
+    if (point === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
   }
+  for (let point = points; point >= 0; point -= 1) {
+    const progress = point / points;
+    const x = progress * width;
+    const y = centerY - makeWavePoint(progress, 1.2);
+    context.lineTo(x, y);
+  }
+  context.closePath();
+  context.fillStyle = `rgba(255,8,8,${0.045 + sync.level * 0.045})`;
+  context.fill();
+
+  context.strokeStyle = `rgba(255,8,8,${0.12 + sync.level * 0.1})`;
+  context.lineWidth = 1.4;
+  context.beginPath();
+  for (let point = 0; point <= points; point += 1) {
+    const progress = point / points;
+    const x = progress * width;
+    const y = centerY + makeWavePoint(progress) * 0.62;
+    if (point === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+  context.stroke();
+
+  context.strokeStyle = `rgba(255,255,255,${0.035 + sync.level * 0.035})`;
+  context.lineWidth = 0.8;
+  context.beginPath();
+  for (let point = 0; point <= points; point += 1) {
+    const progress = point / points;
+    const x = progress * width;
+    const y = centerY - makeWavePoint(progress, 0.7) * 0.42;
+    if (point === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+  context.stroke();
   context.restore();
 }
 
@@ -783,8 +785,8 @@ function drawWrappedSignalRibbon(context, width, height, time, energy, kick, sil
   const startX = box.x - logoWidth * 0.1;
   const endX = box.x + logoWidth * 1.08;
   const turns = 2.15;
-  const travel = silence ? 0.42 : 1.6 + kick * 1.35;
-  const coilAmplitude = logoHeight * (silence ? 0.12 : 0.14 + energy * 0.08 + kick * 0.1);
+  const travel = silence ? 0.42 : 1.05 + syncSafeKick(kick) * 0.5;
+  const coilAmplitude = logoHeight * (silence ? 0.12 : 0.13 + energy * 0.035 + kick * 0.025);
   const points = 220;
   const ribbonPoints = [];
 
@@ -808,42 +810,46 @@ function drawWrappedSignalRibbon(context, width, height, time, energy, kick, sil
     ? (point) => point.depth > -0.18
     : (point) => point.depth <= 0.28;
   const baseAlpha = isFrontLayer
-    ? (silence ? 0.58 : 0.72 + kick * 0.22)
-    : (silence ? 0.18 : 0.24 + kick * 0.12);
+    ? (silence ? 0.58 : 0.62 + energy * 0.12)
+    : (silence ? 0.18 : 0.22 + energy * 0.06);
   const baseWidth = isFrontLayer
-    ? 3.1 + energy * 2.2 + kick * 5.4
-    : 5 + kick * 4;
+    ? 3.1 + energy * 1.25 + kick * 1.4
+    : 5 + kick * 1.2;
 
   context.save();
   context.globalCompositeOperation = "screen";
   drawRibbonStroke(context, ribbonPoints, visibleTest, {
     color: `rgba(255,8,8,${baseAlpha * 0.32})`,
     width: baseWidth * 4.4,
-    blur: 24 + kick * 42,
+    blur: 18 + energy * 18,
     alpha: 1,
     dash: null
   });
   drawRibbonStroke(context, ribbonPoints, visibleTest, {
     color: primary || "rgba(255,8,8,0.92)",
     width: baseWidth,
-    blur: 14 + kick * 28,
+    blur: 10 + energy * 16,
     alpha: baseAlpha,
-    dash: [58 - Math.min(28, kick * 22), 34 + kick * 16],
-    dashOffset: -time * (silence ? 18 : 72 + kick * 90)
+    dash: [58 - Math.min(14, kick * 10), 34 + kick * 8],
+    dashOffset: -time * (silence ? 18 : 105 + kick * 42)
   });
   drawRibbonStroke(context, ribbonPoints, visibleTest, {
     color: `rgba(255,255,255,${isFrontLayer ? 0.76 : 0.18})`,
     width: Math.max(1, baseWidth * 0.3),
-    blur: 10 + kick * 22,
-    alpha: isFrontLayer ? 0.72 : 0.24,
-    dash: [16 + kick * 18, 70],
-    dashOffset: -time * (silence ? 30 : 130 + kick * 130)
+    blur: 7 + energy * 12,
+    alpha: isFrontLayer ? (silence ? 0.54 : 0.62) : 0.18,
+    dash: [16 + kick * 8, 70],
+    dashOffset: -time * (silence ? 30 : 165 + kick * 60)
   });
 
   if (isFrontLayer) {
-    drawRibbonPulseNodes(context, ribbonPoints, time, kick, silence);
+    drawRibbonPulseNodes(context, ribbonPoints, time, kick, silence, energy);
   }
   context.restore();
+}
+
+function syncSafeKick(kick) {
+  return Math.min(1, Math.max(0, kick));
 }
 
 function drawRibbonStroke(context, points, visibleTest, options) {
@@ -884,16 +890,16 @@ function drawRibbonStroke(context, points, visibleTest, options) {
   context.restore();
 }
 
-function drawRibbonPulseNodes(context, points, time, kick, silence) {
-  const nodeCount = silence ? 1 : 3;
+function drawRibbonPulseNodes(context, points, time, kick, silence, energy) {
+  const nodeCount = silence ? 1 : 2;
   for (let node = 0; node < nodeCount; node += 1) {
-    const target = ((time * (silence ? 0.08 : 0.34 + kick * 0.24)) + node / nodeCount) % 1;
+    const target = ((time * (silence ? 0.08 : 0.42 + kick * 0.12)) + node / nodeCount) % 1;
     const point = points[Math.min(points.length - 1, Math.max(0, Math.round(target * (points.length - 1))))];
     if (!point || point.depth < -0.18) continue;
-    const radius = silence ? 3.4 : 4.8 + kick * 12;
+    const radius = silence ? 3.4 : 4.2 + energy * 4.8;
     const glow = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius * 6);
-    glow.addColorStop(0, `rgba(255,255,255,${0.62 + kick * 0.28})`);
-    glow.addColorStop(0.2, `rgba(255,8,8,${0.58 + kick * 0.32})`);
+    glow.addColorStop(0, `rgba(255,255,255,${silence ? 0.5 : 0.42 + energy * 0.18})`);
+    glow.addColorStop(0.2, `rgba(255,8,8,${silence ? 0.48 : 0.46 + energy * 0.18})`);
     glow.addColorStop(1, "rgba(255,8,8,0)");
     context.fillStyle = glow;
     context.beginPath();
@@ -904,44 +910,44 @@ function drawRibbonPulseNodes(context, points, time, kick, silence) {
 
 function drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary) {
   const box = getVFZLogoBox(width, height);
-  const speed = silence ? 0.12 : 0.38 + kick * 0.45;
-  const amplitude = silence ? 1.2 : 3.4 + energy * 9 + kick * 18;
+  const speed = silence ? 0.12 : 0.52 + kick * 0.18;
+  const amplitude = silence ? 1.2 : 2.4 + energy * 5.2 + kick * 4.2;
 
   context.save();
   context.globalCompositeOperation = "screen";
   VFZ_LOGO_OUTLINE_SEGMENTS.forEach((segment, index) => {
     drawLogoContourPass(context, segment, box, time, energy, kick, amplitude, {
       color: index < 2 ? primary : "rgba(255,255,255,0.9)",
-      width: index < 2 ? 2.4 + kick * 4.6 : 1.5 + kick * 3.2,
-      blur: index < 2 ? 16 + kick * 32 : 10 + kick * 22,
-      alpha: index < 2 ? 0.74 : 0.58,
+      width: index < 2 ? 2.25 + energy * 1.1 : 1.35 + energy * 0.7,
+      blur: index < 2 ? 12 + energy * 15 : 8 + energy * 10,
+      alpha: index < 2 ? (silence ? 0.74 : 0.7) : (silence ? 0.58 : 0.5),
       phase: index * 0.38,
       speed
     });
   });
 
-  context.strokeStyle = `rgba(35,210,255,${silence ? 0.12 : 0.16 + kick * 0.28})`;
-  context.lineWidth = 1.2 + kick * 2;
+  context.strokeStyle = `rgba(35,210,255,${silence ? 0.12 : 0.14 + energy * 0.1})`;
+  context.lineWidth = 1.1 + energy * 0.8;
   context.shadowColor = secondary || "rgba(35,210,255,0.62)";
-  context.shadowBlur = 12 + kick * 24;
+  context.shadowBlur = 9 + energy * 12;
   VFZ_LOGO_OUTLINE_SEGMENTS.slice(0, 2).forEach((segment, index) => {
     drawLogoContourPass(context, segment, box, time + 0.22, energy * 0.62, kick, amplitude * 0.46, {
       color: "rgba(35,210,255,0.56)",
-      width: 1.1 + kick * 1.8,
-      blur: 12,
-      alpha: 0.42,
+      width: 1 + energy * 0.65,
+      blur: 9,
+      alpha: silence ? 0.42 : 0.34,
       phase: index + 1.2,
       speed: speed * 0.72
     });
   });
 
-  const nodes = silence ? 1 : 3;
+  const nodes = silence ? 1 : 2;
   for (let node = 0; node < nodes; node += 1) {
     const sampled = sampleLogoOutlinePoint((time * speed + node / nodes) % 1, box);
-    const radius = (silence ? 2.2 : 3.2 + kick * 7) * (node === 0 ? 1.2 : 0.82);
+    const radius = (silence ? 2.2 : 2.8 + energy * 3.2) * (node === 0 ? 1.2 : 0.82);
     const nodeGlow = context.createRadialGradient(sampled.x, sampled.y, 0, sampled.x, sampled.y, radius * 5.4);
-    nodeGlow.addColorStop(0, `rgba(255,255,255,${0.54 + kick * 0.3})`);
-    nodeGlow.addColorStop(0.18, `rgba(255,8,8,${0.58 + kick * 0.28})`);
+    nodeGlow.addColorStop(0, `rgba(255,255,255,${silence ? 0.54 : 0.42 + energy * 0.12})`);
+    nodeGlow.addColorStop(0.18, `rgba(255,8,8,${silence ? 0.58 : 0.46 + energy * 0.14})`);
     nodeGlow.addColorStop(1, "rgba(255,8,8,0)");
     context.fillStyle = nodeGlow;
     context.beginPath();
@@ -949,14 +955,14 @@ function drawLogoContourVisualizer(context, width, height, time, energy, kick, s
     context.fill();
   }
 
-  context.globalAlpha = Math.min(0.48, 0.08 + kick * 0.34);
+  context.globalAlpha = silence ? 0.16 : 0.16 + energy * 0.12;
   context.strokeStyle = tertiary || "rgba(255,255,255,0.64)";
   context.lineWidth = 1;
   for (let ray = 0; ray < 9; ray += 1) {
     const sampled = sampleLogoOutlinePoint((time * 0.24 + ray * 0.113) % 1, box);
     context.beginPath();
     context.moveTo(sampled.x, sampled.y);
-    context.lineTo(width * 0.5 + (sampled.x - width * 0.5) * (1.18 + kick * 0.12), height * 0.5 + (sampled.y - height * 0.5) * (1.18 + kick * 0.12));
+    context.lineTo(width * 0.5 + (sampled.x - width * 0.5) * (1.14 + energy * 0.04), height * 0.5 + (sampled.y - height * 0.5) * (1.14 + energy * 0.04));
     context.stroke();
   }
   context.restore();
