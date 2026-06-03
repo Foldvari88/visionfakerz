@@ -217,7 +217,7 @@ function renderSpotifyFallback({ title, subtitle, url, action, label }) {
   `;
 
   const link = document.createElement("a");
-  link.className = "button button--primary tracked-link";
+  link.className = "button button--primary button--spotify-save tracked-link";
   link.href = redirectUrl(url, action, label);
   link.dataset.action = action;
   link.dataset.label = label;
@@ -1112,7 +1112,7 @@ function buildTrackCard(track, index) {
   }
 
   const link = document.createElement("a");
-  link.className = "button button--primary tracked-link";
+  link.className = "button button--primary button--spotify-save tracked-link";
   link.href = redirectUrl(track.url, "track_save", `track_${index + 1}_${track.title}`);
   link.dataset.action = "track_save";
   link.dataset.label = `track_${index + 1}_${track.title}`;

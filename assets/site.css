@@ -1295,7 +1295,7 @@ main {
 
 .track-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.22fr);
   gap: 0.68rem;
   padding: 0 0.78rem 0.78rem;
 }
@@ -1310,6 +1310,56 @@ main {
 .button--mini {
   min-height: 3rem;
   font-size: 0.9rem;
+}
+
+.track-actions .preview-toggle {
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0.9rem rgba(255, 255, 255, 0.04);
+}
+
+.button--spotify-save {
+  min-height: 3.18rem;
+  border-color: rgba(255, 255, 255, 0.78);
+  font-size: 1rem;
+  text-shadow:
+    0 0 0.45rem rgba(255, 255, 255, 0.75),
+    2px 0 0 rgba(0, 0, 0, 0.22);
+  background:
+    linear-gradient(90deg, #b90000 0%, #ff0808 46%, #ff1f1f 100%);
+  animation:
+    spotify-save-heartbeat 1.55s cubic-bezier(.16,.84,.22,1) infinite,
+    button-red-pulse 2.15s ease-in-out infinite;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 0.95rem 2.3rem rgba(255, 8, 8, 0.42),
+    0 0 2.4rem rgba(255, 8, 8, 0.38),
+    inset 0 0 1.35rem rgba(255, 255, 255, 0.16);
+}
+
+.button--spotify-save::before {
+  opacity: 0.48;
+  animation: spotify-save-sweep 1.85s cubic-bezier(.16,.84,.22,1) infinite;
+}
+
+.button--spotify-save::after {
+  opacity: 0.52;
+  transform: scaleX(1);
+  animation: spotify-save-frame 1.35s cubic-bezier(.16,.84,.22,1) infinite;
+}
+
+.button--spotify-save:hover,
+.button--spotify-save:focus-visible,
+.button--spotify-save.is-dimension-open {
+  transform: perspective(32rem) translateY(-5px) rotateX(11deg) rotateY(-16deg) skewX(-4deg) translateZ(1.4rem);
+  filter: saturate(1.9) contrast(1.28);
+  box-shadow:
+    0 1.25rem 3.4rem rgba(255, 8, 8, 0.58),
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    1.15rem 0 0 -0.78rem rgba(35, 210, 255, 0.86),
+    -1.15rem 0 0 -0.78rem rgba(255, 8, 8, 0.92),
+    inset 0 0 2.3rem rgba(255, 255, 255, 0.24);
 }
 
 .preview-toggle.is-preview-playing {
@@ -1475,6 +1525,35 @@ main {
   100% { opacity: 0; transform: translate(-50%, -50%) scale(18); }
 }
 
+@keyframes spotify-save-heartbeat {
+  0%, 100% {
+    transform: translateZ(0) scale(1);
+  }
+  48% {
+    transform: translateZ(0) scale(1.025);
+  }
+  58% {
+    transform: translateZ(0) scale(0.992);
+  }
+}
+
+@keyframes spotify-save-sweep {
+  0%, 30% { transform: translateX(-135%) skewX(-16deg); opacity: 0.18; }
+  54% { opacity: 0.72; }
+  78%, 100% { transform: translateX(135%) skewX(-16deg); opacity: 0.18; }
+}
+
+@keyframes spotify-save-frame {
+  0%, 100% {
+    opacity: 0.36;
+    transform: scaleX(0.96) scaleY(1);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scaleX(1.05) scaleY(1.16);
+  }
+}
+
 @keyframes shard-tear {
   0% {
     opacity: 1;
@@ -1573,6 +1652,38 @@ main {
   .button:focus-visible::after,
   .button.is-dimension-open::after {
     animation: none;
+  }
+
+  .button--spotify-save {
+    animation: spotify-save-heartbeat 1.95s cubic-bezier(.16, .84, .22, 1) infinite;
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.2),
+      0 0.85rem 1.9rem rgba(255, 8, 8, 0.34),
+      0 0 1.55rem rgba(255, 8, 8, 0.32),
+      inset 0 0 1.05rem rgba(255, 255, 255, 0.13);
+  }
+
+  .button--spotify-save::before {
+    animation: spotify-save-sweep 2.85s cubic-bezier(.16, .84, .22, 1) infinite;
+    opacity: 0.36;
+  }
+
+  .button--spotify-save::after {
+    animation: spotify-save-frame 2.05s cubic-bezier(.16, .84, .22, 1) infinite;
+    opacity: 0.4;
+  }
+
+  .button--spotify-save:hover,
+  .button--spotify-save:focus-visible,
+  .button--spotify-save.is-dimension-open {
+    animation: spotify-save-heartbeat 1.65s cubic-bezier(.16, .84, .22, 1) infinite;
+    filter: saturate(1.6) contrast(1.14);
+    transform: translateY(-2px) skewX(-3deg);
+    box-shadow:
+      0 0.9rem 2.15rem rgba(255, 8, 8, 0.42),
+      0 0 0 1px rgba(255, 255, 255, 0.45),
+      inset 0 0 1.45rem rgba(255, 255, 255, 0.18);
   }
 
   .spotify-fallback,
