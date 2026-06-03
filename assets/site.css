@@ -490,12 +490,12 @@ p {
 
 .visualizer {
   position: relative;
-  min-height: clamp(7.7rem, 37vw, 9.2rem);
+  min-height: clamp(12rem, 82vw, 18rem);
   overflow: hidden;
   border: 1px solid rgba(255, 8, 8, 0.64);
   background:
-    radial-gradient(circle at 50% 52%, rgba(255, 8, 8, 0.2), transparent 10rem),
-    linear-gradient(180deg, rgba(22, 0, 0, 0.86), rgba(0, 0, 0, 0.98)),
+    radial-gradient(circle at 50% 46%, rgba(255, 8, 8, 0.16), transparent 12rem),
+    linear-gradient(180deg, rgba(10, 0, 0, 0.78), rgba(0, 0, 0, 0.98)),
     #020000;
   box-shadow:
     0 2rem 5rem rgba(0, 0, 0, 0.62),
@@ -512,8 +512,8 @@ p {
   pointer-events: none;
   content: "";
   background:
-    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.48) 100%),
-    repeating-linear-gradient(0deg, rgba(255, 8, 8, 0.08) 0 1px, transparent 1px 9px);
+    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.42) 100%),
+    repeating-linear-gradient(0deg, rgba(255, 8, 8, 0.045) 0 1px, transparent 1px 11px);
   mix-blend-mode: screen;
 }
 
@@ -524,9 +524,9 @@ p {
   pointer-events: none;
   content: "";
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 8, 8, 0.34), transparent 32%),
-    linear-gradient(90deg, transparent, rgba(255, 8, 8, 0.22), transparent);
-  opacity: 0.22;
+    radial-gradient(circle at 50% 50%, rgba(255, 8, 8, 0.26), transparent 32%),
+    linear-gradient(90deg, transparent, rgba(255, 8, 8, 0.16), transparent);
+  opacity: 0.16;
   transform: none;
   animation: none;
   mix-blend-mode: screen;

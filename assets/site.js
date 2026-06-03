@@ -107,6 +107,17 @@ let audioSource;
 let analyserNode;
 let frequencyData;
 
+const VFZ_LOGO_VIEWBOX = { width: 640, height: 420 };
+const VFZ_LOGO_OUTLINE_SEGMENTS = [
+  [[58, 30], [212, 30], [296, 193], [386, 30], [583, 30], [535, 102],
+    [391, 102], [356, 164], [290, 164], [195, 333], [58, 30]],
+  [[379, 136], [531, 136], [476, 241], [324, 241], [352, 190],
+    [418, 190], [442, 145], [379, 145], [379, 136]],
+  [[278, 225], [376, 161], [398, 173]],
+  [[281, 255], [334, 255], [330, 274], [292, 286], [281, 255]],
+  [[371, 260], [425, 264], [378, 297], [371, 260]]
+];
+
 function setupAnalytics() {
   if (!GA_MEASUREMENT_ID) return;
 
@@ -535,11 +546,21 @@ function startVisualizer() {
     last: 0,
     width: 1,
     height: 1,
+    logoImage: null,
     isMobile: isMobileViewport(),
     isScrolling: false,
     isVisible: true
   };
   visualizerRuntime = runtime;
+
+  if (typeof Image !== "undefined") {
+    runtime.logoImage = new Image();
+    runtime.logoImage.decoding = "async";
+    runtime.logoImage.onload = () => {
+      runtime.pulse = Math.max(runtime.pulse, 1.18);
+    };
+    runtime.logoImage.src = "assets/visionfakerz-logo-transparent.png";
+  }
 
   const particleCount = runtime.isMobile ? 34 : 80;
   for (let index = 0; index < particleCount; index += 1) {
@@ -646,7 +667,7 @@ function startVisualizer() {
   requestAnimationFrame(draw);
 }
 
-function drawPattern(context, runtime, width, height, time, primary, secondary) {
+function drawPattern(context, runtime, width, height, time, primary, secondary, tertiary) {
   const sync = runtime.audio || readAudioSync(time);
   const bassJump = Math.max(0, sync.bass - runtime.bassMemory);
   const detectedKick = sync.isPlaying
@@ -657,46 +678,30 @@ function drawPattern(context, runtime, width, height, time, primary, secondary) 
 
   const kick = runtime.kick;
   const silence = !sync.isPlaying;
-  const idleSwing = 0.035 + Math.sin(time * 1.4) * 0.01;
-  const swing = silence
-    ? idleSwing
-    : 0.075 + sync.mid * 0.08 + sync.treble * 0.04 + kick * 0.54;
-  const glow = silence ? 0.18 : 0.28 + kick * 0.62;
-  const baseline = height * (0.5 + Math.sin(time * 0.7) * 0.014);
+  const energy = silence
+    ? 0.055 + Math.sin(time * 1.25) * 0.018
+    : Math.min(1, 0.16 + sync.bass * 0.28 + sync.mid * 0.14 + sync.treble * 0.1 + kick * 0.74 + runtime.pulse * 0.12);
+  const glow = silence ? 0.16 : 0.28 + kick * 0.72;
 
   context.lineCap = "round";
   context.lineJoin = "round";
   context.fillStyle = "#020000";
   context.fillRect(0, 0, width, height);
 
-  const bg = context.createRadialGradient(width * 0.5, baseline, 0, width * 0.5, baseline, width * 0.72);
-  bg.addColorStop(0, `rgba(255,8,8,${0.16 + glow * 0.16})`);
-  bg.addColorStop(0.28, `rgba(120,0,0,${0.16 + glow * 0.14})`);
+  const bg = context.createRadialGradient(width * 0.5, height * 0.46, 0, width * 0.5, height * 0.46, width * 0.68);
+  bg.addColorStop(0, `rgba(255,8,8,${0.08 + glow * 0.13})`);
+  bg.addColorStop(0.32, `rgba(120,0,0,${0.08 + glow * 0.12})`);
   bg.addColorStop(1, "rgba(0,0,0,0)");
   context.fillStyle = bg;
   context.fillRect(0, 0, width, height);
 
-  context.save();
-  context.globalCompositeOperation = "screen";
-  for (let line = 0; line < 6; line += 1) {
-    const y = height * (0.18 + line * 0.13);
-    context.strokeStyle = `rgba(255,8,8,${0.045 + kick * 0.045})`;
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y + Math.sin(time * 2 + line) * kick * 5);
-    context.stroke();
-  }
-  context.restore();
+  drawVFZLogo(context, runtime, width, height, time, energy, kick, primary);
+  drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary);
 
-  drawKickWave(context, width, height, time, baseline, swing, kick, silence, primary, 0, 1);
-  drawKickWave(context, width, height, time + 0.17, baseline, swing * 0.66, kick, silence, "rgba(255,32,32,0.72)", -height * 0.035, 0.72);
-  drawKickWave(context, width, height, time - 0.11, baseline, swing * 0.42, kick, silence, "rgba(255,86,86,0.72)", height * 0.034, 0.5);
-
-  if (!silence && kick > 0.18) {
-    const hit = context.createRadialGradient(width * 0.5, baseline, 0, width * 0.5, baseline, width * (0.22 + kick * 0.22));
-    hit.addColorStop(0, `rgba(255,80,80,${0.12 + kick * 0.24})`);
-    hit.addColorStop(0.22, `rgba(255,8,8,${0.18 + kick * 0.32})`);
+  if (!silence && kick > 0.16) {
+    const hit = context.createRadialGradient(width * 0.5, height * 0.42, 0, width * 0.5, height * 0.42, width * (0.2 + kick * 0.24));
+    hit.addColorStop(0, `rgba(255,255,255,${0.08 + kick * 0.16})`);
+    hit.addColorStop(0.22, `rgba(255,8,8,${0.12 + kick * 0.34})`);
     hit.addColorStop(1, "rgba(255,8,8,0)");
     context.fillStyle = hit;
     context.fillRect(0, 0, width, height);
@@ -704,18 +709,223 @@ function drawPattern(context, runtime, width, height, time, primary, secondary) 
 
   context.save();
   context.globalCompositeOperation = "screen";
-  context.fillStyle = `rgba(255,8,8,${0.08 + kick * 0.22})`;
-  for (let bar = 0; bar < 26; bar += 1) {
-    const progress = bar / 25;
-    const beatShape = Math.pow(Math.sin(progress * Math.PI), 1.8);
-    const barHeight = height * (0.012 + beatShape * (0.04 + kick * 0.18 + sync.bass * 0.08));
-    context.fillRect(progress * width, baseline - barHeight * 0.5, width * 0.018, barHeight);
+  context.fillStyle = `rgba(255,8,8,${0.035 + kick * 0.13})`;
+  const barCount = runtime.isMobile ? 18 : 32;
+  for (let bar = 0; bar < barCount; bar += 1) {
+    const progress = bar / Math.max(1, barCount - 1);
+    const beatShape = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 5 - time * 5.4)), 18);
+    const barHeight = height * (0.025 + beatShape * (0.12 + kick * 0.46));
+    context.fillRect(progress * width, height * 0.55 - barHeight * 0.5, width * 0.01, barHeight);
   }
   context.restore();
 
   context.globalAlpha = 1;
   context.shadowBlur = 0;
   context.setLineDash([]);
+}
+
+function getVFZLogoBox(width, height) {
+  const scale = Math.min(width * 0.82 / VFZ_LOGO_VIEWBOX.width, height * 0.72 / VFZ_LOGO_VIEWBOX.height);
+  return {
+    scale,
+    x: (width - VFZ_LOGO_VIEWBOX.width * scale) * 0.5,
+    y: height * 0.06 + (height * 0.72 - VFZ_LOGO_VIEWBOX.height * scale) * 0.5
+  };
+}
+
+function drawVFZLogo(context, runtime, width, height, time, energy, kick, primary) {
+  const box = getVFZLogoBox(width, height);
+  const pulseScale = 1 + kick * 0.018 + Math.sin(time * 1.4) * 0.002;
+  const centerX = box.x + VFZ_LOGO_VIEWBOX.width * box.scale * 0.5;
+  const centerY = box.y + VFZ_LOGO_VIEWBOX.height * box.scale * 0.5;
+
+  context.save();
+  context.translate(centerX, centerY);
+  context.scale(pulseScale, pulseScale);
+  context.translate(-centerX, -centerY);
+  context.shadowColor = `rgba(255,8,8,${0.32 + energy * 0.42})`;
+  context.shadowBlur = 18 + energy * 34;
+  if (runtime.logoImage?.complete && runtime.logoImage.naturalWidth) {
+    context.drawImage(
+      runtime.logoImage,
+      box.x,
+      box.y,
+      VFZ_LOGO_VIEWBOX.width * box.scale,
+      VFZ_LOGO_VIEWBOX.height * box.scale
+    );
+  } else {
+    drawVFZLogoFallback(context, box, primary);
+  }
+  context.restore();
+}
+
+function drawVFZLogoFallback(context, box, primary) {
+  const transformPoint = ([x, y]) => [box.x + x * box.scale, box.y + y * box.scale];
+  const fillPolygon = (points, fill) => {
+    context.beginPath();
+    points.map(transformPoint).forEach(([x, y], index) => {
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.closePath();
+    context.fillStyle = fill;
+    context.fill();
+  };
+
+  fillPolygon([[58, 30], [212, 30], [296, 193], [386, 30], [583, 30], [535, 102], [391, 102], [356, 164], [290, 164], [195, 333]], primary || "#ff0808");
+  fillPolygon([[379, 136], [531, 136], [476, 241], [324, 241], [352, 190], [418, 190], [442, 145], [379, 145]], primary || "#ff0808");
+  context.fillStyle = "#fff";
+  context.beginPath();
+  context.ellipse(box.x + 306 * box.scale, box.y + 269 * box.scale, 31 * box.scale, 18 * box.scale, -0.1, 0, Math.PI * 2);
+  context.ellipse(box.x + 394 * box.scale, box.y + 270 * box.scale, 42 * box.scale, 22 * box.scale, -0.04, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = "#fff";
+  context.lineWidth = 9 * box.scale;
+  context.beginPath();
+  context.moveTo(box.x + 282 * box.scale, box.y + 236 * box.scale);
+  context.lineTo(box.x + 386 * box.scale, box.y + 166 * box.scale);
+  context.stroke();
+}
+
+function drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary) {
+  const box = getVFZLogoBox(width, height);
+  const speed = silence ? 0.12 : 0.38 + kick * 0.45;
+  const amplitude = silence ? 1.2 : 3.4 + energy * 9 + kick * 18;
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  VFZ_LOGO_OUTLINE_SEGMENTS.forEach((segment, index) => {
+    drawLogoContourPass(context, segment, box, time, energy, kick, amplitude, {
+      color: index < 2 ? primary : "rgba(255,255,255,0.9)",
+      width: index < 2 ? 2.4 + kick * 4.6 : 1.5 + kick * 3.2,
+      blur: index < 2 ? 16 + kick * 32 : 10 + kick * 22,
+      alpha: index < 2 ? 0.74 : 0.58,
+      phase: index * 0.38,
+      speed
+    });
+  });
+
+  context.strokeStyle = `rgba(35,210,255,${silence ? 0.12 : 0.16 + kick * 0.28})`;
+  context.lineWidth = 1.2 + kick * 2;
+  context.shadowColor = secondary || "rgba(35,210,255,0.62)";
+  context.shadowBlur = 12 + kick * 24;
+  VFZ_LOGO_OUTLINE_SEGMENTS.slice(0, 2).forEach((segment, index) => {
+    drawLogoContourPass(context, segment, box, time + 0.22, energy * 0.62, kick, amplitude * 0.46, {
+      color: "rgba(35,210,255,0.56)",
+      width: 1.1 + kick * 1.8,
+      blur: 12,
+      alpha: 0.42,
+      phase: index + 1.2,
+      speed: speed * 0.72
+    });
+  });
+
+  const nodes = silence ? 1 : 3;
+  for (let node = 0; node < nodes; node += 1) {
+    const sampled = sampleLogoOutlinePoint((time * speed + node / nodes) % 1, box);
+    const radius = (silence ? 2.2 : 3.2 + kick * 7) * (node === 0 ? 1.2 : 0.82);
+    const nodeGlow = context.createRadialGradient(sampled.x, sampled.y, 0, sampled.x, sampled.y, radius * 5.4);
+    nodeGlow.addColorStop(0, `rgba(255,255,255,${0.54 + kick * 0.3})`);
+    nodeGlow.addColorStop(0.18, `rgba(255,8,8,${0.58 + kick * 0.28})`);
+    nodeGlow.addColorStop(1, "rgba(255,8,8,0)");
+    context.fillStyle = nodeGlow;
+    context.beginPath();
+    context.arc(sampled.x, sampled.y, radius * 5.4, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  context.globalAlpha = Math.min(0.48, 0.08 + kick * 0.34);
+  context.strokeStyle = tertiary || "rgba(255,255,255,0.64)";
+  context.lineWidth = 1;
+  for (let ray = 0; ray < 9; ray += 1) {
+    const sampled = sampleLogoOutlinePoint((time * 0.24 + ray * 0.113) % 1, box);
+    context.beginPath();
+    context.moveTo(sampled.x, sampled.y);
+    context.lineTo(width * 0.5 + (sampled.x - width * 0.5) * (1.18 + kick * 0.12), height * 0.5 + (sampled.y - height * 0.5) * (1.18 + kick * 0.12));
+    context.stroke();
+  }
+  context.restore();
+}
+
+function drawLogoContourPass(context, segment, box, time, energy, kick, amplitude, options) {
+  context.save();
+  context.globalAlpha = options.alpha;
+  context.strokeStyle = options.color;
+  context.lineWidth = options.width;
+  context.shadowColor = options.color;
+  context.shadowBlur = options.blur;
+  context.setLineDash([14 + kick * 18, 18 - Math.min(12, kick * 10)]);
+  context.lineDashOffset = -time * (42 + options.speed * 160);
+  context.beginPath();
+
+  let drawn = false;
+  segment.forEach((point, pointIndex) => {
+    if (pointIndex === segment.length - 1) return;
+    const next = segment[pointIndex + 1];
+    const dx = next[0] - point[0];
+    const dy = next[1] - point[1];
+    const length = Math.hypot(dx, dy) || 1;
+    const normalX = -dy / length;
+    const normalY = dx / length;
+    const steps = Math.max(2, Math.ceil(length / 10));
+    for (let step = 0; step <= steps; step += 1) {
+      const local = step / steps;
+      const progress = (pointIndex + local) / Math.max(1, segment.length - 1);
+      const x = point[0] + dx * local;
+      const y = point[1] + dy * local;
+      const kickSpike = Math.pow(Math.max(0, Math.sin(progress * Math.PI * 9 - time * (7 + options.speed * 5) + options.phase)), 20);
+      const wave = Math.sin(progress * Math.PI * 12 + time * (silenceSafeSpeed(options.speed) * 3.8) + options.phase) * amplitude * (0.12 + energy * 0.28);
+      const displacement = wave + kickSpike * amplitude * (0.5 + kick * 1.4);
+      const sx = box.x + (x + normalX * displacement) * box.scale;
+      const sy = box.y + (y + normalY * displacement) * box.scale;
+      if (!drawn) {
+        context.moveTo(sx, sy);
+        drawn = true;
+      } else {
+        context.lineTo(sx, sy);
+      }
+    }
+  });
+
+  context.stroke();
+  context.restore();
+}
+
+function silenceSafeSpeed(speed) {
+  return Math.max(0.1, speed);
+}
+
+function sampleLogoOutlinePoint(progress, box) {
+  const segment = VFZ_LOGO_OUTLINE_SEGMENTS[0];
+  const lengths = [];
+  let total = 0;
+  for (let index = 0; index < segment.length - 1; index += 1) {
+    const current = segment[index];
+    const next = segment[index + 1];
+    const length = Math.hypot(next[0] - current[0], next[1] - current[1]);
+    lengths.push(length);
+    total += length;
+  }
+
+  let target = ((progress % 1) + 1) % 1 * total;
+  for (let index = 0; index < lengths.length; index += 1) {
+    if (target > lengths[index]) {
+      target -= lengths[index];
+      continue;
+    }
+    const current = segment[index];
+    const next = segment[index + 1];
+    const ratio = target / Math.max(1, lengths[index]);
+    return {
+      x: box.x + (current[0] + (next[0] - current[0]) * ratio) * box.scale,
+      y: box.y + (current[1] + (next[1] - current[1]) * ratio) * box.scale
+    };
+  }
+
+  return {
+    x: box.x + segment[0][0] * box.scale,
+    y: box.y + segment[0][1] * box.scale
+  };
 }
 
 function drawKickWave(context, width, height, time, baseline, swing, kick, silence, color, offsetY, alpha) {
