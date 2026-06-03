@@ -546,21 +546,11 @@ function startVisualizer() {
     last: 0,
     width: 1,
     height: 1,
-    logoImage: null,
     isMobile: isMobileViewport(),
     isScrolling: false,
     isVisible: true
   };
   visualizerRuntime = runtime;
-
-  if (typeof Image !== "undefined") {
-    runtime.logoImage = new Image();
-    runtime.logoImage.decoding = "async";
-    runtime.logoImage.onload = () => {
-      runtime.pulse = Math.max(runtime.pulse, 1.18);
-    };
-    runtime.logoImage.src = "assets/visionfakerz-logo-transparent.png";
-  }
 
   const particleCount = runtime.isMobile ? 34 : 80;
   for (let index = 0; index < particleCount; index += 1) {
@@ -696,7 +686,6 @@ function drawPattern(context, runtime, width, height, time, primary, secondary, 
   context.fillRect(0, 0, width, height);
 
   drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "back");
-  drawVFZLogo(context, runtime, width, height, time, energy, kick, primary);
   drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, "front");
   drawLogoContourVisualizer(context, width, height, time, energy, kick, silence, primary, secondary, tertiary);
 
@@ -733,60 +722,6 @@ function getVFZLogoBox(width, height) {
     x: (width - VFZ_LOGO_VIEWBOX.width * scale) * 0.5,
     y: height * 0.06 + (height * 0.72 - VFZ_LOGO_VIEWBOX.height * scale) * 0.5
   };
-}
-
-function drawVFZLogo(context, runtime, width, height, time, energy, kick, primary) {
-  const box = getVFZLogoBox(width, height);
-  const pulseScale = 1 + kick * 0.018 + Math.sin(time * 1.4) * 0.002;
-  const centerX = box.x + VFZ_LOGO_VIEWBOX.width * box.scale * 0.5;
-  const centerY = box.y + VFZ_LOGO_VIEWBOX.height * box.scale * 0.5;
-
-  context.save();
-  context.translate(centerX, centerY);
-  context.scale(pulseScale, pulseScale);
-  context.translate(-centerX, -centerY);
-  context.shadowColor = `rgba(255,8,8,${0.32 + energy * 0.42})`;
-  context.shadowBlur = 18 + energy * 34;
-  if (runtime.logoImage?.complete && runtime.logoImage.naturalWidth) {
-    context.drawImage(
-      runtime.logoImage,
-      box.x,
-      box.y,
-      VFZ_LOGO_VIEWBOX.width * box.scale,
-      VFZ_LOGO_VIEWBOX.height * box.scale
-    );
-  } else {
-    drawVFZLogoFallback(context, box, primary);
-  }
-  context.restore();
-}
-
-function drawVFZLogoFallback(context, box, primary) {
-  const transformPoint = ([x, y]) => [box.x + x * box.scale, box.y + y * box.scale];
-  const fillPolygon = (points, fill) => {
-    context.beginPath();
-    points.map(transformPoint).forEach(([x, y], index) => {
-      if (index === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
-    });
-    context.closePath();
-    context.fillStyle = fill;
-    context.fill();
-  };
-
-  fillPolygon([[58, 30], [212, 30], [296, 193], [386, 30], [583, 30], [535, 102], [391, 102], [356, 164], [290, 164], [195, 333]], primary || "#ff0808");
-  fillPolygon([[379, 136], [531, 136], [476, 241], [324, 241], [352, 190], [418, 190], [442, 145], [379, 145]], primary || "#ff0808");
-  context.fillStyle = "#fff";
-  context.beginPath();
-  context.ellipse(box.x + 306 * box.scale, box.y + 269 * box.scale, 31 * box.scale, 18 * box.scale, -0.1, 0, Math.PI * 2);
-  context.ellipse(box.x + 394 * box.scale, box.y + 270 * box.scale, 42 * box.scale, 22 * box.scale, -0.04, 0, Math.PI * 2);
-  context.fill();
-  context.strokeStyle = "#fff";
-  context.lineWidth = 9 * box.scale;
-  context.beginPath();
-  context.moveTo(box.x + 282 * box.scale, box.y + 236 * box.scale);
-  context.lineTo(box.x + 386 * box.scale, box.y + 166 * box.scale);
-  context.stroke();
 }
 
 function drawWrappedSignalRibbon(context, width, height, time, energy, kick, silence, primary, layer) {
