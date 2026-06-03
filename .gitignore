@@ -1,0 +1,21 @@
+# Generated video output
+output/*
+!output/.gitkeep
+
+# Large local media inputs
+assets/backgrounds/*
+!assets/backgrounds/.gitkeep
+assets/music/*
+!assets/music/.gitkeep
+!assets/music/source_tracks/
+!assets/music/source_tracks/.gitkeep
+!assets/music/snippets/
+!assets/music/snippets/.gitkeep
+assets/music/source_tracks/*
+!assets/music/source_tracks/.gitkeep
+assets/music/snippets/*
+!assets/music/snippets/.gitkeep
+
+# Temporary folders
+**/_tmp/
+**/_smoke/

@@ -1,0 +1,17 @@
+{
+  "font_name": "Arial",
+  "font_size": 72,
+  "max_line_length": 28,
+  "caption_position": "bottom",
+  "caption_margin": 260,
+  "text_color": "#FFFFFF",
+  "outline_color": "#000000",
+  "box_color": "#000000",
+  "box_opacity": 0.35,
+  "bold": true,
+  "outline": 4,
+  "shadow": 0,
+  "image_motion": "auto",
+  "image_zoom_end": 1.16
+}
+

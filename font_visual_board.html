@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VisionFakerZ font visual board</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b0d;
+      --panel: #151519;
+      --panel-2: #1d1d23;
+      --text: #f5f2ec;
+      --muted: #a6a19a;
+      --line: #33333b;
+      --accent: #e7c971;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.45;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      border-bottom: 1px solid var(--line);
+      background: rgba(11, 11, 13, 0.94);
+      backdrop-filter: blur(12px);
+    }
+
+    .wrap {
+      width: min(1420px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .top {
+      display: grid;
+      gap: 14px;
+      padding: 20px 0 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .note {
+      margin: 0;
+      color: var(--muted);
+      max-width: 920px;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input {
+      width: min(360px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #050506;
+      color: var(--text);
+      padding: 11px 12px;
+      font-size: 16px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    main {
+      padding: 22px 0 32px;
+    }
+
+    .match {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 22px;
+      padding: 16px;
+      border: 1px solid #4a3f20;
+      border-radius: 8px;
+      background: #181407;
+    }
+
+    .match strong {
+      display: block;
+      color: var(--accent);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .match span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .match img {
+      width: 100%;
+      max-height: 95px;
+      object-fit: contain;
+      object-position: left center;
+      filter: invert(1);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      min-height: 178px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .rank {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .preview {
+      display: grid;
+      place-items: center start;
+      min-height: 126px;
+      padding: 12px;
+      background: #f4f2ed;
+    }
+
+    .preview img {
+      display: block;
+      width: 100%;
+      max-height: 104px;
+      object-fit: contain;
+      object-position: left center;
+    }
+
+    .open {
+      display: inline-block;
+      color: #d7c17f;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        width: min(100% - 20px, 1420px);
+      }
+
+      .match {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap top">
+      <div>
+        <h1>VisionFakerZ betutipus vizualis osszehasonlitas</h1>
+        <p class="note">A feltoltott minta legkozelebb a Bleeding Cowboys / Bleeding Cowboys Pro vonalhoz all. Alabb 100 hasonlo talalat latszik ugyanazzal a szoveggel, hogy szemre tudd osszevetni a V, F, k, r es zaro Z karaktereket.</p>
+      </div>
+      <div class="controls">
+        <label for="sample">Minta szoveg</label>
+        <input id="sample" value="VisionFakerZ" autocomplete="off">
+        <span class="hint">Tipp: a pontos azonositasnal a nagy V, nagy F es nagy Z a legfontosabb.</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="match" aria-label="Legvaloszinubb talalat">
+      <div>
+        <strong>Legvaloszinubb</strong>
+        <span>#1 Bleeding Cowboys</span>
+      </div>
+      <img id="bestPreview" alt="Bleeding Cowboys VisionFakerZ preview">
+    </section>
+    <section id="grid" class="grid" aria-label="100 hasonlo font elonezet"></section>
+  </main>
+
+  <script>
+    const fonts = [
+      { id: "280111", name: "Bleeding Cowboys", href: "https://www.whatfontis.com/FF_Bleeding-Cowboys.font" },
+      { id: "281317", name: "LLCooper", href: "https://www.whatfontis.com/FF_LLCooper.font" },
+      { id: "583510", name: "Litoland", href: "https://www.whatfontis.com/FF_Litoland.font" },
+      { id: "295627", name: "AntPoltExpd-Bold", href: "https://www.whatfontis.com/FF_AntPoltExpd-Bold.font" },
+      { id: "273593", name: "Offset Plain", href: "https://www.whatfontis.com/FF_Offset-Plain.font" },
+      { id: "475637", name: "DK Office Squeeze Regular", href: "https://www.whatfontis.com/FF_DK-Office-Squeeze-Regular.font" },
+      { id: "295590", name: "AntPoltLtExpd-Bold", href: "https://www.whatfontis.com/FF_AntPoltLtExpd-Bold.font" },
+      { id: "561302", name: "Decorative", href: "https://www.whatfontis.com/FF_Decorative.font" },
+      { id: "266734", name: "ABCTech Bodoni Cactus", href: "https://www.whatfontis.com/FF_ABCTech-Bodoni-Cactus.font" },
+      { id: "295630", name: "AntPoltSemiExpd-Bold", href: "https://www.whatfontis.com/FF_AntPoltSemiExpd-Bold.font" },
+      { id: "308277", name: "Cantata One", href: "https://www.whatfontis.com/FF_Cantata-One.font" },
+      { id: "1319110", name: "Offset Plain", href: "https://www.whatfontis.com/FF_Offset-Plain1.font" },
+      { id: "302881", name: "Yeseva One", href: "https://www.whatfontis.com/FF_Yeseva-One.font" },
+      { id: "313509", name: "LittleBird", href: "https://www.whatfontis.com/FF_LittleBird.font" },
+      { id: "308717", name: "bombu", href: "https://www.whatfontis.com/FF_bombu.font" },
+      { id: "1146408", name: "Lokey", href: "https://www.whatfontis.com/FF_Lokey.font" },
+      { id: "487984", name: "Taviraj SemiBold", href: "https://www.whatfontis.com/FF_Taviraj-SemiBold.font" },
+      { id: "295619", name: "AntPoltLt-Bold", href: "https://www.whatfontis.com/FF_AntPoltLt-Bold.font" },
+      { id: "313200", name: "Rye Regular", href: "https://www.whatfontis.com/FF_Rye-Regular.font" },
+      { id: "476947", name: "Pryma Demo", href: "https://www.whatfontis.com/FF_Pryma-Demo.font" },
+      { id: "302882", name: "YesevaOne-Regular", href: "https://www.whatfontis.com/FF_YesevaOne-Regular.font" },
+      { id: "583502", name: "Doriel", href: "https://www.whatfontis.com/FF_Doriel.font" },
+      { id: "287745", name: "CheapProFonts Serif Pro Bold", href: "https://www.whatfontis.com/FF_CheapProFonts-Serif-Pro-Bold.font" },
+      { id: "307809", name: "Verana-Bold", href: "https://www.whatfontis.com/FF_Verana-Bold.font" },
+      { id: "271266", name: "Hamilton Demo", href: "https://www.whatfontis.com/FF_Hamilton-Demo.font" },
+      { id: "725513", name: "StudioW", href: "https://www.whatfontis.com/FF_StudioW.font" },
+      { id: "285188", name: "Justus Bold", href: "https://www.whatfontis.com/FF_Justus-Bold.font" },
+      { id: "698687", name: "Gavabon", href: "https://www.whatfontis.com/FF_Gavabon.font" },
+      { id: "295668", name: "AntPoltCond-Regular", href: "https://www.whatfontis.com/FF_AntPoltCond-Regular.font" },
+      { id: "304306", name: "DejaVu Serif Bold", href: "https://www.whatfontis.com/FF_DejaVu-Serif-Bold.font" },
+      { id: "285065", name: "Bitstream Vera Serif Bold", href: "https://www.whatfontis.com/FF_Bitstream-Vera-Serif-Bold.font" },
+      { id: "490696", name: "Caladea Bold", href: "https://www.whatfontis.com/FF_Caladea-Bold.font" },
+      { id: "304497", name: "BaskervaldADFStd-Heavy", href: "https://www.whatfontis.com/FF_BaskervaldADFStd-Heavy.font" },
+      { id: "295646", name: "AntPolt-Bold", href: "https://www.whatfontis.com/FF_AntPolt-Bold.font" },
+      { id: "270013", name: "OldgateLaneOutline", href: "https://www.whatfontis.com/FF_OldgateLaneOutline.font" },
+      { id: "275577", name: "d'SpenserBold", href: "https://www.whatfontis.com/FF_dSpenserBold.font" },
+      { id: "1225005", name: "Grandline free for personal", href: "https://www.whatfontis.com/FF_Grandline-free-for-personal.font" },
+      { id: "304304", name: "DejaVu Serif Condensed Bold", href: "https://www.whatfontis.com/FF_DejaVu-Serif-Condensed-Bold.font" },
+      { id: "540241", name: "Beau-Regular", href: "https://www.whatfontis.com/FF_Beau-Regular.font" },
+      { id: "300760", name: "Stardos Stencil Bold", href: "https://www.whatfontis.com/FF_Stardos-Stencil-Bold.font" },
+      { id: "296091", name: "SF Phosphorus Triselenide", href: "https://www.whatfontis.com/FF_SF-Phosphorus-Triselenide.font" },
+      { id: "277419", name: "Phosphorus Triselenide", href: "https://www.whatfontis.com/FF_Phosphorus-Triselenide.font" },
+      { id: "295603", name: "AntPoltLtSemiExpd-Bold", href: "https://www.whatfontis.com/FF_AntPoltLtSemiExpd-Bold.font" },
+      { id: "295604", name: "AntPolt-Regular", href: "https://www.whatfontis.com/FF_AntPolt-Regular.font" },
+      { id: "315161", name: "MillOpti-Medium", href: "https://www.whatfontis.com/FF_MillOpti-Medium.font" },
+      { id: "320089", name: "Noto Serif Bold", href: "https://www.whatfontis.com/FF_Noto-Serif-Bold.font" },
+      { id: "316895", name: "Chapaza Regular", href: "https://www.whatfontis.com/FF_Chapaza-Regular.font" },
+      { id: "303724", name: "IntellectaBodoned Trash", href: "https://www.whatfontis.com/FF_IntellectaBodoned-Trash.font" },
+      { id: "330077", name: "Mount PERSONAL USE ONLY", href: "https://www.whatfontis.com/FF_Mount-PERSONAL-USE-ONLY.font" },
+      { id: "480301", name: "Storyteller Demo", href: "https://www.whatfontis.com/FF_Storyteller-Demo.font" },
+      { id: "295618", name: "AntPoltSemiCond-Regular", href: "https://www.whatfontis.com/FF_AntPoltSemiCond-Regular.font" },
+      { id: "315238", name: "OPTICenturySchoolbookBold", href: "https://www.whatfontis.com/FF_OPTICenturySchoolbookBold.font" },
+      { id: "295624", name: "AntPoltSemiExpd-Regular", href: "https://www.whatfontis.com/FF_AntPoltSemiExpd-Regular.font" },
+      { id: "698042", name: "Layers", href: "https://www.whatfontis.com/FF_Layers.font" },
+      { id: "285187", name: "Justus Roman", href: "https://www.whatfontis.com/FF_Justus-Roman.font" },
+      { id: "639260", name: "Beaumaris Demo Regular", href: "https://www.whatfontis.com/FF_Beaumaris-Demo-Regular.font" },
+      { id: "296771", name: "EdnnaUT Bold", href: "https://www.whatfontis.com/FF_EdnnaUT-Bold.font" },
+      { id: "325485", name: "Abhaya Libre ExtraBold", href: "https://www.whatfontis.com/FF_Abhaya-Libre-ExtraBold.font" },
+      { id: "541867", name: "IBM Plex Serif SemiBold", href: "https://www.whatfontis.com/FF_IBM-Plex-Serif-SemiBold.font" },
+      { id: "322920", name: "Sree Krushnadevaraya", href: "https://www.whatfontis.com/FF_Sree-Krushnadevaraya.font" },
+      { id: "295593", name: "AntPoltLtSemiCond-Bold", href: "https://www.whatfontis.com/FF_AntPoltLtSemiCond-Bold.font" },
+      { id: "305763", name: "Aver", href: "https://www.whatfontis.com/FF_Aver.font" },
+      { id: "638572", name: "BeaumarisDemo-Regular", href: "https://www.whatfontis.com/FF_BeaumarisDemo-Regular.font" },
+      { id: "487990", name: "Taviraj Bold", href: "https://www.whatfontis.com/FF_Taviraj-Bold.font" },
+      { id: "548711", name: "Lissain", href: "https://www.whatfontis.com/FF_Lissain.font" },
+      { id: "318484", name: "NCAA ECU Pirates", href: "https://www.whatfontis.com/FF_NCAA-ECU-Pirates.font" },
+      { id: "552018", name: "Ishmeria", href: "https://www.whatfontis.com/FF_Ishmeria.font" },
+      { id: "325482", name: "Abhaya Libre Bold", href: "https://www.whatfontis.com/FF_Abhaya-Libre-Bold.font" },
+      { id: "302930", name: "Vidaloka-Regular", href: "https://www.whatfontis.com/FF_Vidaloka-Regular.font" },
+      { id: "440408", name: "PixieOpti", href: "https://www.whatfontis.com/FF_PixieOpti.font" },
+      { id: "293978", name: "Guanine-Regular", href: "https://www.whatfontis.com/FF_Guanine-Regular.font" },
+      { id: "639454", name: "Bodonio Regular", href: "https://www.whatfontis.com/FF_Bodonio-Regular.font" },
+      { id: "297577", name: "Baskerville-Normal-Bold", href: "https://www.whatfontis.com/FF_Baskerville-Normal-Bold.font" },
+      { id: "488120", name: "CantataOne-Regular", href: "https://www.whatfontis.com/FF_CantataOne-Regular.font" },
+      { id: "295587", name: "AntPoltCond-Bold", href: "https://www.whatfontis.com/FF_AntPoltCond-Bold.font" },
+      { id: "280828", name: "JI Hidden Vines", href: "https://www.whatfontis.com/FF_JI-Hidden-Vines.font" },
+      { id: "295612", name: "AntPoltSemiCond-Bold", href: "https://www.whatfontis.com/FF_AntPoltSemiCond-Bold.font" },
+      { id: "300193", name: "LMRoman8-Bold", href: "https://www.whatfontis.com/FF_LMRoman8-Bold.font" },
+      { id: "553156", name: "Coconut Punch DEMO Regular", href: "https://www.whatfontis.com/FF_Coconut-Punch-DEMO-Regular.font" },
+      { id: "315314", name: "AlyssaOpti-Bold", href: "https://www.whatfontis.com/FF_AlyssaOpti-Bold.font" },
+      { id: "556790", name: "SenzaBella Bold", href: "https://www.whatfontis.com/FF_SenzaBella-Bold.font" },
+      { id: "639523", name: "Avrile Serif Bold", href: "https://www.whatfontis.com/FF_Avrile-Serif-Bold.font" },
+      { id: "270580", name: "Pixie Regular", href: "https://www.whatfontis.com/FF_Pixie-Regular.font" },
+      { id: "318526", name: "Libro", href: "https://www.whatfontis.com/FF_Libro.font" },
+      { id: "640099", name: "Chalkaholic DEMO Regular", href: "https://www.whatfontis.com/FF_Chalkaholic-DEMO-Regular.font" },
+      { id: "300842", name: "AveriaSerif-Regular", href: "https://www.whatfontis.com/FF_AveriaSerif-Regular.font" },
+      { id: "1146864", name: "RELLIALE", href: "https://www.whatfontis.com/FF_RELLIALE.font" },
+      { id: "295667", name: "AntPoltExpd-Regular", href: "https://www.whatfontis.com/FF_AntPoltExpd-Regular.font" },
+      { id: "275830", name: "Riot Squad NF", href: "https://www.whatfontis.com/FF_Riot-Squad-NF.font" },
+      { id: "297174", name: "Droid Serif Bold", href: "https://www.whatfontis.com/FF_Droid-Serif-Bold.font" },
+      { id: "303090", name: "Philosopher Bold", href: "https://www.whatfontis.com/FF_Philosopher-Bold.font" },
+      { id: "309492", name: "CountryGold", href: "https://www.whatfontis.com/FF_CountryGold.font" },
+      { id: "582838", name: "Avrile Serif Black", href: "https://www.whatfontis.com/FF_Avrile-Serif-Black.font" },
+      { id: "300224", name: "LMRoman12-Bold", href: "https://www.whatfontis.com/FF_LMRoman12-Bold.font" },
+      { id: "305927", name: "WC ADDENDUM Bta", href: "https://www.whatfontis.com/FF_WC-ADDENDUM-Bta.font" },
+      { id: "582836", name: "Avrile Serif ExtraBold", href: "https://www.whatfontis.com/FF_Avrile-Serif-ExtraBold.font" },
+      { id: "487710", name: "El Messiri Bold", href: "https://www.whatfontis.com/FF_El-Messiri-Bold.font" },
+      { id: "271999", name: "Bedini  Bold", href: "https://www.whatfontis.com/FF_Bedini-Bold.font" },
+      { id: "300210", name: "LMRoman9-Bold", href: "https://www.whatfontis.com/FF_LMRoman9-Bold.font" },
+      { id: "275579", name: "d'SpenserBlack", href: "https://www.whatfontis.com/FF_dSpenserBlack.font" }
+    ];
+
+    const sampleInput = document.getElementById("sample");
+    const grid = document.getElementById("grid");
+    const bestPreview = document.getElementById("bestPreview");
+
+    function previewUrl(id, text) {
+      return `https://imgall.whatfontis.com/index.php?p=refresh&id=${id}&text=${encodeURIComponent(text)}&amount=100`;
+    }
+
+    function render() {
+      const sample = sampleInput.value.trim() || "VisionFakerZ";
+      bestPreview.src = previewUrl(fonts[0].id, sample);
+      grid.innerHTML = "";
+
+      fonts.forEach((font, index) => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-head">
+            <div class="name" title="${font.name}">${font.name}</div>
+            <div class="rank">#${index + 1}</div>
+          </div>
+          <div class="preview">
+            <img loading="lazy" src="${previewUrl(font.id, sample)}" alt="${font.name} preview">
+          </div>
+          <div class="card-head">
+            <a class="open" href="${font.href}" target="_blank" rel="noopener">Megnyitas / letoltes</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    sampleInput.addEventListener("input", render);
+    render();
+  </script>
+</body>
+</html>

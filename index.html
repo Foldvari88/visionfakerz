@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VisionFakerZ | Spotify</title>
+    <meta
+      name="description"
+      content="Follow VisionFakerZ on Spotify, save the This Is VisionFakerZ playlist, and save every release."
+    >
+    <meta name="theme-color" content="#050505">
+    <meta property="og:title" content="VisionFakerZ on Spotify">
+    <meta
+      property="og:description"
+      content="Follow VisionFakerZ, save the playlist, then save every track."
+    >
+    <meta property="og:type" content="website">
+    <link rel="icon" href="assets/visionfakerz-logo.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="assets/site.css?v=20260603-vfz31">
+
+  </head>
+  <body>
+    <nav class="site-menu" aria-label="VisionFakerZ navigation" data-site-menu>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu-panel" data-menu-toggle>
+        <span></span><span></span><span></span>
+      </button>
+      <div class="menu-panel" id="site-menu-panel" data-menu-panel>
+        <a href="#top">Tracks</a>
+        <a href="#releases">Releases</a>
+        <a href="#ready">R U ready to faking vision?</a>
+        <a href="#donate">Donate us</a>
+        <a href="#contact">Contact</a>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="hero__inner">
+        <div class="brand-lockup">
+          <img class="brand-mark" src="assets/visionfakerz-logo-transparent.png" alt="VisionFakerZ logo">
+          <span class="wordmark-current">
+            <img class="script-logo wordmark wordmark--hidden-vines" src="assets/visionfakerz-band-wordmark.png" alt="VisionFakerZ">
+          </span>
+        </div>
+
+        <div class="hero-copy" aria-labelledby="playlist-title">
+          <p class="eyebrow">Bend the vision</p>
+          <h1 id="playlist-title">This Is VisionFakerZ</h1>
+          <p class="hero-statement">
+            Fake the dimension. Distort the signal. Save the transmission before it collapses.
+          </p>
+        </div>
+
+        <div class="hero-player">
+          <div class="visualizer" data-visualizer>
+            <canvas data-visualizer-canvas aria-hidden="true"></canvas>
+            <div class="visualizer__copy">
+              <p class="visualizer__title" data-visualizer-title>Whoremonger</p>
+            </div>
+          </div>
+
+          <div class="spotify-frame spotify-frame--hero" data-playlist-frame></div>
+        </div>
+
+        <div class="hero-actions">
+          <a class="button button--primary tracked-link" href="#" data-action="follow" data-label="hero_follow">
+            Follow the signal
+          </a>
+          <a class="button button--ghost tracked-link" href="#" data-action="playlist_save" data-label="hero_playlist_save">
+            Save dimension
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section tracks-section" id="tracks" aria-labelledby="tracks-title">
+        <div class="section__heading">
+          <p class="eyebrow">Fragments of the fake dimension</p>
+          <h2 id="tracks-title">Track by track</h2>
+        </div>
+
+        <div class="track-list" data-track-list></div>
+      </section>
+
+      <section class="section link-section" id="releases" aria-labelledby="releases-title">
+        <p class="eyebrow">Signal archive</p>
+        <h2 id="releases-title">Releases</h2>
+        <a class="button button--ghost tracked-link" href="#" data-action="playlist_save" data-label="menu_releases">
+          Open the distortion archive
+        </a>
+      </section>
+
+      <section class="section link-section" id="ready" aria-labelledby="ready-title">
+        <p class="eyebrow">Dimension checkpoint</p>
+        <h2 id="ready-title">R U ready to faking vision?</h2>
+        <a class="button button--primary tracked-link" href="#" data-action="follow" data-label="menu_ready">
+          Enter the fake vision
+        </a>
+      </section>
+
+      <section class="section signup-section" id="subscribe" aria-labelledby="subscribe-title">
+        <p class="eyebrow">Join the breach</p>
+        <h2 id="subscribe-title">Get the next fake vision</h2>
+        <form class="signup-form" data-signup-form>
+          <label class="sr-only" for="signup-email">Email address</label>
+          <input id="signup-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required>
+          <button class="button button--primary" type="submit">Subscribe</button>
+          <p class="signup-form__status" data-signup-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="section link-section" id="donate" aria-labelledby="donate-title">
+        <p class="eyebrow">Keep the signal alive</p>
+        <h2 id="donate-title">Donate us</h2>
+        <a class="button button--ghost" href="#contact">
+          Send support signal
+        </a>
+      </section>
+
+      <section class="section link-section" id="contact" aria-labelledby="contact-title">
+        <p class="eyebrow">Open a breach</p>
+        <h2 id="contact-title">Contact</h2>
+        <a class="button button--primary" href="mailto:visionfakerz@example.com">
+          Contact VisionFakerZ
+        </a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <a class="tracked-link footer-link" href="#" data-action="follow" data-label="footer_follow">
+        Follow VisionFakerZ on Spotify
+      </a>
+    </footer>
+
+    <script src="assets/site.js?v=20260603-vfz31"></script>
+  </body>
+</html>

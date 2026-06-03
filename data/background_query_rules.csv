@@ -1,0 +1,12 @@
+name,triggers,query
+dark_gym,"gym|workout|training|edzes|edzés|discipline|fegyelem|push|strength|strong","dark gym workout cinematic vertical"
+luxury_city,"luxury|rich|wealth|money|success|siker|penz|pénz|millionaire|premium","luxury city night cinematic vertical"
+business_focus,"business|entrepreneur|startup|office|munka|focus|fokusz|productivity|consistent|simple","modern office skyline productivity vertical"
+trading_crypto,"trading|crypto|bitcoin|market|chart|finance|stock|befektetes|befektetés","financial trading screens city vertical"
+ai_future,"ai|future|futuristic|technology|tech|digital|robot|automation","futuristic technology abstract vertical"
+sunrise_motivation,"today|start|win|goal|dream|cel|cél|motivation|motivacio|motiváció|perfect moment","sunrise city cinematic motivation vertical"
+ocean_calm,"calm|peace|healing|spiritual|energy|meditation|mindset|mood|hangulat","ocean sunset cinematic vertical"
+rain_romantic,"sad|love|romantic|heart|alone|rain|szerelem|szomoru|szomorú","rainy city lights cinematic vertical"
+abstract_energy,"dopamine|energy|power|viral|quote|idea|vision|visionfakerz","abstract neon light particles vertical"
+fallback,"*","cinematic abstract city lights vertical"
+
