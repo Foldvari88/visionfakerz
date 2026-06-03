@@ -216,6 +216,10 @@ function getDeviceType() {
   return "desktop";
 }
 
+function isMobileViewport() {
+  return getDeviceType() === "mobile";
+}
+
 function inferTrackTitle(label = "") {
   const normalized = String(label).replace(/\+/g, " ");
   const match = SPOTIFY.tracks.find((track) => normalized.toLowerCase().includes(track.title.toLowerCase()));
@@ -458,7 +462,7 @@ function startVisualizer() {
   const canvas = document.querySelector("[data-visualizer-canvas]");
   if (!canvas) return;
 
-  const context = canvas.getContext("2d");
+  const context = canvas.getContext("2d", { alpha: false, desynchronized: true }) || canvas.getContext("2d");
   const runtime = {
     canvas,
     context,
@@ -466,11 +470,17 @@ function startVisualizer() {
     particles: [],
     audio: readAudioSync(0),
     pulse: 1,
-    last: 0
+    last: 0,
+    width: 1,
+    height: 1,
+    isMobile: isMobileViewport(),
+    isScrolling: false,
+    isVisible: true
   };
   visualizerRuntime = runtime;
 
-  for (let index = 0; index < 80; index += 1) {
+  const particleCount = runtime.isMobile ? 34 : 80;
+  for (let index = 0; index < particleCount; index += 1) {
     runtime.particles.push({
       x: Math.random(),
       y: Math.random(),
@@ -482,20 +492,48 @@ function startVisualizer() {
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.floor(rect.width * ratio));
-    canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+    runtime.isMobile = isMobileViewport();
+    runtime.width = Math.max(1, rect.width);
+    runtime.height = Math.max(1, rect.height);
+    const ratio = Math.min(window.devicePixelRatio || 1, runtime.isMobile ? 1.15 : 1.75);
+    canvas.width = Math.max(1, Math.floor(runtime.width * ratio));
+    canvas.height = Math.max(1, Math.floor(runtime.height * ratio));
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
+  function scheduleDraw(callback, delay = 0) {
+    if (delay > 0) {
+      window.setTimeout(() => requestAnimationFrame(callback), delay);
+      return;
+    }
+    requestAnimationFrame(callback);
+  }
+
   function draw(timestamp) {
-    const rect = canvas.getBoundingClientRect();
-    if (canvas.width !== Math.floor(rect.width * (window.devicePixelRatio || 1))) {
+    if (document.hidden || !runtime.isVisible) {
+      scheduleDraw(draw, 260);
+      return;
+    }
+
+    const isPlaying = playingPreviewIndex !== null;
+    const frameInterval = runtime.isScrolling
+      ? 140
+      : runtime.isMobile
+        ? (isPlaying ? 34 : 72)
+        : 16;
+    const wait = frameInterval - (timestamp - runtime.last);
+    if (wait > 0) {
+      scheduleDraw(draw, Math.min(wait, 120));
+      return;
+    }
+    runtime.last = timestamp;
+
+    if (!runtime.width || !runtime.height) {
       resize();
     }
 
-    const width = rect.width;
-    const height = rect.height;
+    const width = runtime.width;
+    const height = runtime.height;
     const fallbackTime = timestamp * 0.001;
     const audioSync = readAudioSync(fallbackTime);
     runtime.audio = audioSync;
@@ -512,14 +550,37 @@ function startVisualizer() {
     context.fillRect(0, 0, width, height);
 
     drawPattern(context, runtime, width, height, time, primary, secondary, tertiary);
-    requestAnimationFrame(draw);
+    scheduleDraw(draw);
   }
 
   resize();
   canvas.closest(".visualizer")?.addEventListener("pointermove", () => {
     runtime.pulse = Math.max(runtime.pulse, 1.12);
   });
-  window.addEventListener("resize", resize);
+
+  let scrollTimer;
+  window.addEventListener("scroll", () => {
+    if (!runtime.isMobile) return;
+    runtime.isScrolling = true;
+    window.clearTimeout(scrollTimer);
+    scrollTimer = window.setTimeout(() => {
+      runtime.isScrolling = false;
+    }, 180);
+  }, { passive: true });
+
+  window.addEventListener("resize", resize, { passive: true });
+  window.addEventListener("orientationchange", () => window.setTimeout(resize, 120), { passive: true });
+
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(resize).observe(canvas);
+  }
+
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      runtime.isVisible = entries.some((entry) => entry.isIntersecting);
+    }, { rootMargin: "160px" }).observe(canvas);
+  }
+
   requestAnimationFrame(draw);
 }
 
@@ -945,7 +1006,10 @@ function buildTrackCard(track, index) {
   visualizerButton.setAttribute("aria-pressed", "false");
   visualizerButton.addEventListener("click", () => {
     playTrackPreview(track, index);
-    document.querySelector("[data-visualizer]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    document.querySelector("[data-visualizer]")?.scrollIntoView({
+      behavior: isMobileViewport() ? "auto" : "smooth",
+      block: "center"
+    });
   });
 
   const actions = document.createElement("div");
